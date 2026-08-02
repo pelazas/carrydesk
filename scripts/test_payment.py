@@ -118,10 +118,15 @@ async def run(url: str, endpoint: str, key: str) -> int:
             # Overwhelmingly the cause: the buyer signed fine but has no USDC,
             # so the facilitator refuses to settle and the server re-challenges.
             # A bare "402 {}" is useless to whoever is running this, so say it.
-            print("    still 402 after paying -- the buyer wallet almost certainly")
-            print(f"    holds no Base Sepolia USDC. Fund {acct.address} at:")
-            for f in FAUCETS:
-                print(f"      - {f}")
+            net = acc.get("network", "")
+            if net == "eip155:8453":
+                print("    still 402 after paying -- the buyer wallet almost certainly")
+                print(f"    holds no real USDC on Base. Send some to {acct.address}.")
+            else:
+                print("    still 402 after paying -- the buyer wallet almost certainly")
+                print(f"    holds no Base Sepolia USDC. Fund {acct.address} at:")
+                for f in FAUCETS:
+                    print(f"      - {f}")
         else:
             print(f"    body: {r2.text[:400]}")
         return 1
@@ -134,7 +139,12 @@ async def run(url: str, endpoint: str, key: str) -> int:
             print(f"    tx       : {s.get('transaction')}")
             print(f"    payer    : {s.get('payer')}")
             if s.get("transaction"):
-                print(f"    explorer : https://sepolia.basescan.org/tx/{s['transaction']}")
+                # Explorer host depends on the network we actually settled on --
+                # printing a Sepolia link for a mainnet tx sends people looking
+                # for a transaction that does not exist there.
+                net = acc.get("network", "")
+                host = "basescan.org" if net == "eip155:8453" else "sepolia.basescan.org"
+                print(f"    explorer : https://{host}/tx/{s['transaction']}")
         except Exception:  # noqa: BLE001
             pass
 
