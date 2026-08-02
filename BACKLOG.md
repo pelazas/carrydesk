@@ -32,21 +32,21 @@ different lists reads as a contribution; five near-duplicate ones read as spam.
 
 ---
 
-## Carry-spread chart on the public page
+## Carry-spread chart — DONE 2026-08-02
 
-**The highest-value remaining build.** The archive is currently a table of
-numbers — accurate, but not persuasive. A line plotting **mean vs median spread
-across every snapshot ever published** turns it into a visible track record, and
-it improves on its own every day.
+Live on both the front page and `/archive`. Server-rendered inline SVG, no JS
+and no external requests, plotting **mean and median together** because the gap
+between them is the point: the first live reading showed +45.6% mean against
++10.3% median, and a chart of the flattering line alone would undo the reason
+anyone should trust the rest.
 
-Plot both series, not just the headline: the mean is routinely dominated by one
-or two illiquid names (first live reading was 39%/yr headline against 9.6%/yr
-median). Showing the gap makes the honesty visible rather than buried in a JSON
-field, and that honesty is the product's main differentiator.
+Colours are categorical slots 1 and 2 from the validated reference palette,
+checked with the palette validator against both the light and dark page
+surfaces — lightness band, chroma floor, CVD separation, normal-vision floor
+and contrast all pass in both modes. Do not substitute by eye.
 
-Constraints: no JS frameworks, no external requests — the page must keep working
-when everything else is having a bad day. Inline SVG rendered server-side from
-`store.archive_index()`.
+Hover tooltips use SVG's native `<title>`, so they work with zero script.
+Endpoint-only direct labels; a number on every point is unreadable.
 
 Tracked in Notion: <https://app.notion.com/p/3b089b3ff699819b8e32e4596c829ebc>
 

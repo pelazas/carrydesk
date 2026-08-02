@@ -187,6 +187,47 @@ class SnapshotStore:
             )
         return out
 
+    def spread_series(self, days: int = 90, max_points: int = 400) -> list[dict]:
+        """Every archived snapshot as (ts, mean, median) for the public chart.
+
+        Per-snapshot rather than per-day: the archive is hourly, and daily
+        aggregation would throw away most of the record it exists to prove.
+
+        Downsampled by even stride once past `max_points` so the SVG stays small
+        as the archive grows — the shape is what the chart communicates, and a
+        year of hourly points would be ~8700 path segments nobody can see.
+        """
+        rows = []
+        for path in sorted(self.dir.glob("*.jsonl"))[-days:]:
+            for line in path.read_text().splitlines():
+                if not line.strip():
+                    continue
+                try:
+                    s = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                mean = s.get("carry_spread_annualized")
+                if mean is None:
+                    continue
+                rows.append(
+                    {
+                        "ts": s.get("as_of_ts"),
+                        "as_of": s.get("as_of"),
+                        "mean": mean,
+                        "median": s.get("carry_spread_annualized_median"),
+                    }
+                )
+        rows.sort(key=lambda r: r["ts"] or 0)
+        if len(rows) > max_points:
+            stride = len(rows) / max_points
+            picked = [rows[int(i * stride)] for i in range(max_points)]
+            # Always keep the true last point: the current reading must be the
+            # one the chart ends on, not whichever sample the stride landed near.
+            if picked[-1] is not rows[-1]:
+                picked[-1] = rows[-1]
+            rows = picked
+        return rows
+
     def totals(self) -> dict:
         n = 0
         for path in self.dir.glob("*.jsonl"):

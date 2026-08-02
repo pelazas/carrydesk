@@ -451,7 +451,8 @@ async def root(request: Request):
 
         fv = free_view(snap)
         return HTMLResponse(
-            render(fv, delayed, store.health()["archived_days"], json_ld(fv, store.totals()))
+            render(fv, delayed, store.health()["archived_days"],
+                   json_ld(fv, store.totals()), store.spread_series())
         )
     return _index()
 
@@ -495,7 +496,9 @@ async def archive():
 
     from .web import render_archive
 
-    return HTMLResponse(render_archive(store.archive_index(), store.totals()))
+    return HTMLResponse(
+        render_archive(store.archive_index(), store.totals(), store.spread_series())
+    )
 
 
 @app.get("/api", include_in_schema=False)

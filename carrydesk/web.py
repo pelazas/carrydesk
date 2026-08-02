@@ -13,6 +13,7 @@ from __future__ import annotations
 from html import escape
 
 from . import config as C
+from .chart import CHART_CSS, render_chart
 
 
 def _pct(x: float | None) -> str:
@@ -62,7 +63,7 @@ a{color:var(--accent);text-underline-offset:2px}
 .foot{margin-top:52px;padding-top:22px;border-top:1px solid var(--line);
 color:var(--dim);font-size:13px}
 .foot p{margin:0 0 8px}
-"""
+""" + CHART_CSS
 
 
 def _rows(items: list[dict], side: str) -> str:
@@ -83,7 +84,7 @@ def _rows(items: list[dict], side: str) -> str:
     )
 
 
-def render_archive(index: list[dict], totals: dict) -> str:
+def render_archive(index: list[dict], totals: dict, series: list[dict] | None = None) -> str:
     """Every snapshot day ever published. The proof, made browsable.
 
     A JSONL file in a repo is evidence; a page anyone can open is persuasion.
@@ -104,6 +105,7 @@ def render_archive(index: list[dict], totals: dict) -> str:
             f'<td class="n">{_pct(d.get("carry_spread_annualized_median"))}{flag}</td></tr>'
         )
     body = "".join(rows) or '<tr><td colspan="5" class="dim">No snapshots yet.</td></tr>'
+    chartblock = render_chart(series or [])
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -115,6 +117,10 @@ def render_archive(index: list[dict], totals: dict) -> str:
 <strong>{totals.get("days", 0)}</strong> day(s), appended hourly and never edited.
 Each row shows that day's final reading.</p>
 
+<h2>Carry spread over time</h2>
+{chartblock}
+
+<h2>By day</h2>
 <table><tr><th>day</th>
 <th style="text-align:right">snapshots</th>
 <th style="text-align:right">universe</th>
@@ -143,8 +149,10 @@ every other number here worth less.</p>
 </div></body></html>"""
 
 
-def render(snap: dict, delayed: bool, archived_days: int, json_ld: str = "") -> str:
+def render(snap: dict, delayed: bool, archived_days: int, json_ld: str = "",
+           series: list[dict] | None = None) -> str:
     """Render the public page from a free-tier snapshot."""
+    chartblock = render_chart(series or [])
     as_of = escape(str(snap.get("as_of", "unknown")))
     n = snap.get("universe_size", 0)
     lookback = snap.get("method", {}).get("lookback_hours", 336) // 24
@@ -183,6 +191,9 @@ funding &middot; {as_of} &middot; {freshness}</p>
     <div class="v">{_pct(snap.get("carry_spread_annualized_median"))}</div></div>
 </div>
 {outlier}
+
+<h2>Carry spread over time</h2>
+{chartblock}
 
 <div class="cols">
 {_rows(snap.get("longs", []), "Long leg &middot; paid to hold")}
