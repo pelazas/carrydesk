@@ -63,6 +63,23 @@ action is a human posting once, and it cannot be delegated.
 
 ---
 
+## 2026-08-02 — listed on Glama
+
+https://glama.ai/mcp/servers/pelazas/carrydesk — approved and scored.
+
+`awesome-mcp-servers` requires a Glama listing before merge, and Glama's check
+is that the server starts in a container and answers introspection. Added a
+Dockerfile and verified it: image builds, container runs non-root, all six tools
+enumerate, live API call succeeds from inside. Score badge pushed to PR #11378.
+
+**Where automation stopped:** Glama's "Add Server" is an account signup with a
+ToS acceptance and an "I'm not a robot" checkbox. Playwright drove the site
+fine, but accepting terms in the owner's name and defeating an explicit
+anti-automation control are not things to do on someone's behalf — the owner
+completed those two clicks.
+
+---
+
 ## 2026-08-02 — first curated-list submissions
 
 Two PRs open, both following each repo's contribution guidelines and both

@@ -9,7 +9,8 @@ list — everything here has been considered and postponed for a stated reason.
 
 - **punkpeye/awesome-mcp-servers** (★91.7k) →
   [PR #11378](https://github.com/punkpeye/awesome-mcp-servers/pull/11378),
-  added to *Finance & Fintech*. Their CONTRIBUTING explicitly invites agent PRs
+  added to *Finance & Fintech*. Glama listing + score badge done as their bot
+  required; awaiting maintainer review. Their CONTRIBUTING explicitly invites agent PRs
   via a `🤖🤖🤖` title marker, which this PR uses and discloses.
 - **xpaysh/awesome-x402** (★272) →
   [PR #1106](https://github.com/xpaysh/awesome-x402/pull/1106),
