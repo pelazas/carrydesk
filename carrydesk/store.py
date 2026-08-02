@@ -92,6 +92,16 @@ class SnapshotStore:
 
         Walks back day by day (max 7) so a gap in publishing degrades to
         "slightly staler free data" rather than an error.
+
+        Returns None when the archive is younger than `hours` (day one) or when
+        nothing was published within the walk-back window. The API then falls
+        back to the *live* snapshot, which means the free tier briefly serves
+        what the paid tier sells.
+
+        That is deliberate. Day one it is the only option, and past the window it
+        implies the archive has been broken for over a week -- at which point the
+        public page still rendering matters more than a leak nobody is paying to
+        avoid. `tests/test_delayed_tier.py` pins both ends of this behaviour.
         """
         cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
         cutoff_ts = int(cutoff.timestamp())
