@@ -25,6 +25,8 @@ from typing import Any
 import httpx
 from mcp.server import MCPServer
 
+from . import __version__
+
 log = logging.getLogger("carrydesk.mcp")
 
 API_BASE = os.getenv("CARRYDESK_API_BASE", "https://carry.pelazas.com").rstrip("/")
@@ -34,7 +36,9 @@ TIMEOUT = float(os.getenv("CARRYDESK_TIMEOUT", 30.0))
 server = MCPServer(
     name="carrydesk",
     title="carrydesk — Hyperliquid funding carry",
-    version="0.1.0",
+    # Derived, never hardcoded: a server announcing a version it isn't makes
+    # every client's introspection wrong, and it drifts the moment you publish.
+    version=__version__,
     instructions=(
         "Cross-sectional funding-carry rankings for Hyperliquid perpetuals: which "
         "perps are paying to hold long, which are paying to hold short, and the "
