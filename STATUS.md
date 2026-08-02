@@ -63,6 +63,27 @@ action is a human posting once, and it cannot be delegated.
 
 ---
 
+## 2026-08-02 — cron hardening (what survives after the session ends)
+
+Ran every cron job under a stripped cron environment (`env -i`, minimal PATH,
+no profile) rather than an interactive shell, because that is how they will
+actually run once nobody is watching.
+
+**Found: the archive push failed whenever the box was behind origin.** The push
+was rejected, the script exited 1, and the crontab discarded output — so the
+archive would have stopped being preserved *silently*. That is the precise
+failure mode the entire track record depends on avoiding, and the detached-HEAD
+guard did not cover it, because divergence is a different path.
+
+Fixed: fetch, rebase with `--autostash`, retry once. Every failure branch now
+writes a dated line to stderr, and the crontab routes it to Telegram instead of
+`/dev/null`.
+
+The other four jobs (ops probe, daily post, weekly audit, notifier) all pass
+under the same stripped environment.
+
+---
+
 ## 2026-08-02 — published to the official MCP Registry
 
 `io.github.pelazas/carrydesk` v0.1.2 is live in
