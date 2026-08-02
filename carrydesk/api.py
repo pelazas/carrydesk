@@ -187,6 +187,20 @@ def _install_payments(app: FastAPI) -> bool:
     # 'No scheme for "exact" on "eip155:..."'. Registers eip155:* by default.
     register_exact_evm_server(server)
 
+    # Bazaar discovery: enriches each route's declaration so CDP's index can
+    # list it. The RouteConfig service_name/tags/description above are what
+    # show up there, which is why they are written for humans rather than logs.
+    if C.USING_CDP:
+        try:
+            from x402.extensions.bazaar import bazaar_resource_server_extension
+
+            server.register_extension(bazaar_resource_server_extension)
+            log.info("bazaar discovery extension registered")
+        except Exception as e:  # noqa: BLE001
+            # Discovery is distribution, not correctness -- never let it stop
+            # the service from taking payments.
+            log.warning("bazaar extension not registered: %s", e)
+
     _assert_routes_match(routes)
     app.middleware("http")(payment_middleware(routes=routes, server=server))
     log.info("x402 paywall active: %s -> %s", C.X402_NETWORK, C.X402_PAY_TO)

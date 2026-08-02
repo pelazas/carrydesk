@@ -17,8 +17,10 @@ No ETH needed. The `exact` scheme uses EIP-3009 transferWithAuthorization: the
 buyer only signs, and the facilitator broadcasts and pays the gas. A wallet
 holding nothing but USDC can still pay.
 
-NEVER put a mainnet key in here. This is a throwaway buyer, not the receiving
-wallet -- the receiving side (X402_PAY_TO) never needs a key at all.
+This is a throwaway BUYER, never the receiving wallet -- the receiving side
+(X402_PAY_TO) needs no key at all. The key is printed to a terminal, so treat
+it as compromised and keep only test-sized amounts in it. Verifying mainnet
+needs ~$1 of real USDC on Base; a call costs $0.01-$0.05.
 """
 from __future__ import annotations
 
@@ -45,7 +47,8 @@ def new_wallet() -> int:
     # below is directly copy-pasteable.
     key = acct.key.hex()
     key = key if key.startswith("0x") else f"0x{key}"
-    print("Throwaway BUYER wallet (testnet only — never fund this on mainnet):\n")
+    print("Throwaway BUYER wallet — a hot key printed to a terminal.\n"
+          "Fund it with only what you are willing to lose:\n")
     print(f"  address     {acct.address}")
     print(f"  private key {key}\n")
     print("Fund the address with Base Sepolia USDC:")
