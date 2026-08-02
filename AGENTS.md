@@ -154,6 +154,24 @@ check fails closed on any route without a sample.
 
 ---
 
+## 6b. Deploying — use `deploy/update.sh`, never `git reset --hard`
+
+`git fetch && git reset --hard origin/master` **destroys archive data**. The
+refresher appends a snapshot about hourly; anything appended since the last
+`cron_archive.sh` run is uncommitted, and a hard reset discards it. This
+happened — one snapshot was lost before anyone noticed, because nothing errors
+and the file simply comes back shorter.
+
+```bash
+./deploy/update.sh          # commit+push the archive, fast-forward, restart
+```
+
+It refuses to touch the working tree if the archive step fails, stashes rather
+than discards anything left over, and uses `merge --ff-only` so a genuine
+divergence gets looked at instead of steamrolled.
+
+---
+
 ## 7. Rules for an agent working on this
 
 1. **Never put an LLM in the data path, the pricing path, or the payment path.**
@@ -166,7 +184,8 @@ check fails closed on any route without a sample.
    hold small amounts. `X402_PAY_TO` is receive-only and needs no key at all.
 4. **The archive is append-only.** `data/snapshots/*.jsonl` is the track record
    and cannot be backfilled. Rewriting it destroys the only thing that makes the
-   product credible.
+   product credible. **Deploy with `deploy/update.sh`** — a plain
+   `git reset --hard` silently drops uncommitted snapshots (§6b).
 5. **Be honest in published numbers.** The headline spread is routinely
    dominated by one or two illiquid coins — that is why
    `carry_spread_annualized_trimmed`, `_median` and `outlier_dominated` exist
