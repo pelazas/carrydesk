@@ -41,4 +41,23 @@ fi
 n="$(git diff --cached --numstat | wc -l | tr -d ' ')"
 git -c user.name="carrydesk" -c user.email="carrydesk@localhost" \
     commit -q -m "archive $(date -u +%F): $n snapshot file(s)" || exit 1
-git push -q origin master || exit 1
+
+# Push, and if the remote has moved ahead, rebase onto it and try once more.
+# Without this the push is simply rejected and the archive stops being
+# preserved -- silently, because cron discards output. `.gitattributes` sets
+# merge=union on the snapshot files, so concurrent appends rebase cleanly.
+push() { git push -q origin master 2>/dev/null; }
+
+if ! push; then
+  git fetch -q origin || { echo "$(date -u +%FT%TZ) ARCHIVE: fetch failed" >&2; exit 1; }
+  if ! git -c user.name="carrydesk" -c user.email="carrydesk@localhost" \
+        pull -q --rebase --autostash origin master; then
+    git rebase --abort 2>/dev/null
+    echo "$(date -u +%FT%TZ) ARCHIVE: rebase onto origin/master failed, NOT pushed" >&2
+    exit 1
+  fi
+  if ! push; then
+    echo "$(date -u +%FT%TZ) ARCHIVE: push still rejected after rebase" >&2
+    exit 1
+  fi
+fi
