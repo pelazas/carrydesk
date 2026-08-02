@@ -28,27 +28,8 @@ STATE="$HOME_DIR/.last_alert_state"
 ALERT_LOG="$HOME_DIR/alert.log"
 
 notify() {
-  local msg="$1" token http
-  if [ -z "$ENV_FILE" ] || [ -z "$CHAT_ID" ]; then
-    echo "$(date -u +%FT%TZ) NOT DELIVERED (HERMES_ENV/TELEGRAM_CHAT_ID unset): ${msg:0:160}" >> "$ALERT_LOG"
-    return 1
-  fi
-  token="$(grep -m1 '^TELEGRAM_BOT_TOKEN=' "$ENV_FILE" 2>/dev/null | cut -d= -f2- | tr -d '"'"'"' \r')"
-  if [ -z "$token" ]; then
-    echo "$(date -u +%FT%TZ) DELIVERY FAILED: no TELEGRAM_BOT_TOKEN in $ENV_FILE" >> "$ALERT_LOG"
-    return 1
-  fi
-  http="$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 \
-    "https://api.telegram.org/bot${token}/sendMessage" \
-    --data-urlencode "chat_id=${CHAT_ID}" \
-    --data-urlencode "text=${msg}")"
-  if [ "$http" != "200" ]; then
-    # A broken alerter must never fail silently -- that is strictly worse than
-    # no alerter at all, because it looks like everything is fine.
-    echo "$(date -u +%FT%TZ) DELIVERY FAILED http=$http msg=${msg:0:120}" >> "$ALERT_LOG"
-    return 1
-  fi
-  return 0
+  # Delegates to the shared notifier so there is one delivery path to fix.
+  "$HOME_DIR/deploy/cron_notify.sh" "$1"
 }
 
 out="$("$HOME_DIR/.venv/bin/python" "$HOME_DIR/scripts/ops_check.py" --url "$URL" 2>&1)"
