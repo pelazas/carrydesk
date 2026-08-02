@@ -33,18 +33,18 @@ computation, the archive, and the reliability.
 
 ## 2. Status
 
-**Live and taking payments on testnet. No distribution yet.**
+**Live on Base mainnet, settling real USDC. Distribution barely started.**
 
 | Piece | State |
 |---|---|
 | Hyperliquid data client | ✅ verified live (177 perps, ~38 above the $1m/day floor) |
 | Carry ranking maths | ✅ 14 unit tests |
 | FastAPI service | ✅ deployed, HTTPS, real data |
-| x402 paywall | ✅ **real payments settled on Base Sepolia** |
+| x402 paywall | ✅ **real USDC settled on Base mainnet** |
 | MCP server | ✅ 6 tools, verified against production, paid path works |
 | Ops monitor | ✅ every 10 min → Telegram, verified with a real alert |
 | Snapshot archive | ✅ append-only, auto-committed daily |
-| Mainnet payments | ⚙️ wired — needs only `CDP_API_KEY_ID`/`SECRET` (see §9) |
+| Mainnet payments | ✅ live, two settlements confirmed on-chain |
 | Distribution | ❌ **nothing published anywhere** |
 
 `STATUS.md` has the running log; `DECISIONS.md` has the reasoning.
@@ -173,8 +173,8 @@ check fails closed on any route without a sample.
 
 Stated plainly so nobody builds on sand:
 
-- **No mainnet payment has ever settled.** Everything is Base Sepolia.
-- **Nobody has ever bought this.** The only payments were our own tests.
+- **Nobody outside has ever bought this.** All payments so far were our own.
+- **Not indexed in CDP's bazaar yet** despite the extension being registered.
 - **No distribution has happened.** Nothing is listed or published anywhere.
 - **The archive is days old at most**, so `/v1/carry/history/*` is thin and the
   free tier falls back to live data until 24h of snapshots exist.

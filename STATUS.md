@@ -4,6 +4,32 @@ Newest first. This file plus `AGENTS.md` is the whole picture.
 
 ---
 
+## 2026-08-02 — MAINNET: real USDC settled
+
+**carrydesk takes real money.** Two settlements on Base mainnet:
+
+| Endpoint | Price | Transaction |
+|---|---|---|
+| `/v1/universe` | $0.01 | [`0x6f524f…7a190`](https://basescan.org/tx/0x6f524f9de5b713a3e88507f590c518cce69479036fa7491551c5e22ff2d7a190) |
+| `/v1/carry/rankings` | $0.05 | [`0xfe6004…06060c`](https://basescan.org/tx/0xfe6004c4cbacc64eda9c9a0f1a876898bbda8ff4f7e5a5a6b3b71e509606060c) |
+
+Receiving wallet holds **0.06 USDC on Base mainnet**. Real USDC contract
+`0x8335…2913`, buyer paid no gas (facilitator sponsors via EIP-3009).
+
+**Bug: the CDP JWT binds the HTTP method, not just the path.** Signing all four
+facilitator endpoints as POST made `/supported` return 401, which surfaced as
+every paid route 500ing on *first request* rather than at startup, because the
+paywall middleware initializes lazily. `get_supported` and bazaar discovery are
+GET; `verify` and `settle` are POST.
+
+**Bazaar: registered but not yet indexed.** The discovery extension is active
+and CDP's index holds 14,820 resources, but ours is not among the first 3,000
+and `/discovery/search` returns 0 hits for terms that demonstrably exist in the
+index — so search is not a reliable signal either way. Presumed asynchronous;
+recheck later.
+
+---
+
 ## Where it stands — 2026-08-02
 
 **Live at https://carry.pelazas.com, taking real payments on Base Sepolia.**
@@ -12,8 +38,8 @@ Newest first. This file plus `AGENTS.md` is the whole picture.
 |---|---|
 | Service | `carrydesk.service`, `systemd --user`, survives reboot, ~53 MB / 512 MB cap |
 | TLS | Caddy + Let's Encrypt production cert, auto-renewing |
-| Paywall | ON — Base Sepolia (`eip155:84532`) |
-| Revenue to date | **0.06 USDC** (our own two test payments) |
+| Paywall | ON — **Base mainnet** (`eip155:8453`), real USDC |
+| Revenue to date | **0.06 USDC on mainnet** (our own two test payments) |
 | Monitoring | ops probe every 10 min → Telegram, verified with a real alert + recovery |
 | Archive | append-only, auto-committed daily at 03:00 UTC |
 | Distribution | **none** — nothing published or listed anywhere |
