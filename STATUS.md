@@ -20,6 +20,32 @@ Newest first. This file plus `AGENTS.md` is the whole picture.
 
 ---
 
+## 2026-08-02 — public repo + public page
+
+**Repo is public**: https://github.com/pelazas/carrydesk — so the MCP server is
+installable, which was the point.
+
+**Public page at `/`** — server-rendered from the same snapshot the API serves,
+no JS and no external requests. Content-negotiated: HTML for browsers, the JSON
+index for API clients (also at `/api`). It shows trimmed and median spread
+beside the headline plus the outlier flag, because publishing the number that
+makes us look worse is what makes the rest credible.
+
+**Repo hygiene incident.** The repo was made public *before* the sanitized
+history was force-pushed, so unsanitized commits were retrievable by SHA for
+about two minutes. No credentials were ever committed — `.env` and keys were
+gitignored from the first commit, verified across all history — and the most
+sensitive item (the droplet IP) was already public via DNS. Resolved properly by
+deleting and recreating the repo, since force-pushing does not remove orphaned
+commits from GitHub. Verified from a fresh anonymous clone: zero leaks, 19
+commits, archive intact.
+
+**Deploy key gotcha:** recreating the repo silently downgraded the old deploy key
+to read-only, which would have made the 03:00 archive push fail quietly. New key
+issued, and the path now comes from `.env` rather than being hardcoded.
+
+---
+
 ## 2026-08-02 — first payments settled on-chain
 
 Proven end to end, both entry paths:
