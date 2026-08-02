@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+.env.local
+*.log
+
+# Snapshots are the track record and SHOULD be committed once the service is
+# live on a server -- they are the proof the ranking was published in advance.
+# Locally-generated dev snapshots are not. The server commits its own.
+# Ignore the snapshot files themselves, not the directory -- git cannot
+# un-ignore a file inside an ignored directory, and the dir must exist.
+data/snapshots/*.jsonl
+
+.DS_Store
+.pytest_cache/
