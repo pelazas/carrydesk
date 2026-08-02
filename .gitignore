@@ -10,7 +10,13 @@ __pycache__/
 # Locally-generated dev snapshots are not. The server commits its own.
 # Ignore the snapshot files themselves, not the directory -- git cannot
 # un-ignore a file inside an ignored directory, and the dir must exist.
+# On the server, cron_archive.sh force-adds these: there they are the asset.
 data/snapshots/*.jsonl
+
+# Server-side runtime state. Never committed; it would just churn the diff.
+.last_alert_state
+alert.log
+posts/
 
 .DS_Store
 .pytest_cache/
