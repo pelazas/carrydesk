@@ -78,5 +78,16 @@ carrydesk does not appear in CDP's index (14,820 resources; not in the first
 3,000). Their `/discovery/search` returns 0 hits even for resources visibly
 present in the listing, so it is not a usable signal.
 
-**Next step if it stays absent:** work out whether CDP requires an explicit
-declaration call rather than inferring resources from settled payments.
+**Investigated 2026-08-02, and the answer is: nothing more we can do from here.**
+A full scan of all 14,826 indexed resources confirms we are absent, and two real
+mainnet settlements did not change that. The x402 SDK's bazaar client exposes
+only `list_resources` and `search` — there is **no register, declare or publish
+call**. The `Declare*DiscoveryConfig` helpers enrich what a route advertises in
+its own 402 challenge; they do not push anything to CDP.
+
+So indexing is Coinbase's to do. We have already done everything available:
+the resource server extension is registered, and each paid route declares
+`service_name`, `tags` and a human-readable `description`.
+
+**Recheck occasionally.** If it stays absent for weeks, ask CDP directly rather
+than guessing further.

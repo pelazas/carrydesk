@@ -30,6 +30,39 @@ recheck later.
 
 ---
 
+## 2026-08-02 — Tier 1 distribution: findable without a human
+
+Everything that can make the service discoverable *without* a person posting
+about it is now live and verified:
+
+| Surface | |
+|---|---|
+| `/llms.txt` | plain-text description of the service for an LLM |
+| `/robots.txt` | explicitly welcomes named AI crawlers, not just a wildcard |
+| `/sitemap.xml` | the free pages worth indexing |
+| JSON-LD | schema.org `Dataset` markup on the public page |
+| `/archive` | every snapshot ever published, browsable |
+| GitHub | 10 topics, homepage, and a description written for search |
+| `weekly_audit.py` | Mondays 09:00 UTC → Telegram only on failure |
+
+The weekly audit covers what a 10-minute liveness probe never sees: certificate
+expiry, an archive that quietly stopped growing, and — most importantly — the
+free tier losing its `trimmed` / `median` / `outlier_dominated` fields, which
+would be the most damaging silent regression available.
+
+All alerting now shares one `cron_notify.sh`, so there is a single delivery path
+and a single `alert.log`.
+
+**Bazaar: confirmed we cannot self-list.** Full scan of all 14,826 indexed
+resources — absent. Two mainnet settlements did not trigger indexing. The SDK
+has no register/declare call. See `BACKLOG.md`.
+
+**What Tier 1 does not do:** create anyone who looks. Passive discovery without
+an active seed reliably produces close to zero. The remaining highest-leverage
+action is a human posting once, and it cannot be delegated.
+
+---
+
 ## Where it stands — 2026-08-02
 
 **Live at https://carry.pelazas.com, settling real USDC on Base mainnet.**
