@@ -72,6 +72,10 @@ a{color:var(--accent);text-underline-offset:2px}
 .foot{margin-top:52px;padding-top:22px;border-top:1px solid var(--line);
 color:var(--dim);font-size:13px}
 .foot p{margin:0 0 8px}
+table.bt td:first-child{width:52%}
+table.bt td{font-size:14px}
+ul{margin:0 0 14px;padding-left:20px}
+li{margin:0 0 7px}
 """ + CHART_CSS
 
 
@@ -156,6 +160,67 @@ every other number here worth less.</p>
 <p><strong>Informational only. Not investment advice.</strong></p>
 </div>
 </div></body></html>"""
+
+
+# Every figure here comes from a real 6.89-year backtest of this signal
+# (systematic-trading/10-live/RESULTS.md): 40 Binance USDⓈ-M perps,
+# 2019-09-10 → 2026-07-31, 7,550 8h bars, maker fills, costs modelled.
+# Config: lookback=21, rebal=9, k=12, equal weight, dollar-neutral.
+#
+# Nothing here is invented or extrapolated beyond what that document states.
+# The out-of-sample column leads because the full-sample number flatters, and
+# every return sits next to the drawdown that produced it. This is a backtest
+# of the strategy, NOT carrydesk's performance and NOT a live track record --
+# said plainly in the copy, because a reader who confuses the two has been
+# misled whether or not the numbers are accurate.
+BACKTEST = """
+<h2>What this signal did over 6.9 years</h2>
+<p>The ranking above is the input to a dollar-neutral book. Here is how that book
+backtested &mdash; <strong>40 Binance perpetuals, September 2019 to July 2026</strong>,
+7,550 eight-hour bars, maker fills, costs modelled, rebalanced every 9 bars across
+12 coins a side.</p>
+<p class="dim"><strong>These are simulated results for the strategy, not carrydesk's own
+performance and not a live trading record.</strong> Nobody's money was at risk in
+producing them.</p>
+
+<table class="bt"><tr><th></th>
+<th style="text-align:right">gross 1.0</th>
+<th style="text-align:right">gross 2.0</th></tr>
+<tr><td>Annual return <span class="dim">(out-of-sample)</span></td>
+    <td class="n">+14.4%</td><td class="n">+28.8%</td></tr>
+<tr><td>Annual return <span class="dim">(full sample)</span></td>
+    <td class="n">+18.0%</td><td class="n">+36.0%</td></tr>
+<tr><td>Sharpe</td><td class="n">1.11</td><td class="n">1.11</td></tr>
+<tr><td>Max drawdown</td><td class="n neg">&minus;20.6%</td>
+    <td class="n neg">&minus;37.7%</td></tr>
+<tr><td>Volatility</td><td class="n">14.8%</td><td class="n">29.6%</td></tr>
+</table>
+
+<p class="dim">Leverage is the only lever available, and it improves nothing: Sharpe is
+flat across every gross level because leverage scales return and drawdown identically.
+Quarter-Kelly lands at 2.05&times;, which is why 2.0 is a ceiling rather than an
+aggressive choice.</p>
+
+<h2>Why you should discount it anyway</h2>
+<p>A backtest is a hypothesis, not a track record. Four things are worth knowing before
+you weigh this one:</p>
+<ul>
+<li><strong>It degraded out of sample.</strong> Train half Sharpe 1.48, test half 1.11.
+A neighbouring configuration degraded far worse &mdash; 1.35 to 0.72 &mdash; which is a
+fair estimate of how much of this is luck.</li>
+<li><strong>Forty parameter combinations were tested.</strong> Under a zero-skill null the
+expected <em>best</em> Sharpe from forty tries is about 1.20. The best observed was 1.91.
+It clears the bar, but not by enough to trust any single configuration.</li>
+<li><strong>2021 flattered it</strong> (+81% that year). Removing 2021 entirely moves
+Sharpe 0.48 &rarr; 0.42 on the comparable config, so it is not purely a mania artifact
+&mdash; but no single year should carry a thesis.</li>
+<li><strong>It was validated on Binance; this page ranks Hyperliquid.</strong> Similar
+universe, not identical. Live slippage beyond the modelled fee is untested.</li>
+</ul>
+<p class="dim">These are the numbers as computed, including the ones that argue against the
+strategy. Past backtested performance says nothing reliable about future returns, and
+none of this is a recommendation to trade.</p>
+"""
 
 
 def _honesty_block(snap: dict) -> str:
@@ -296,6 +361,8 @@ that is never edited, and mirrored to a
 timestamps are not ours to forge. The chart above is that file, drawn.
 <a href="{C.PUBLIC_URL}/archive">{archived_days} day(s) archived so far</a> &mdash; it gets
 more convincing every hour, and there is no way to speed that up.</p>
+
+{BACKTEST}
 
 <h2>API</h2>
 <pre><code>curl {C.PUBLIC_URL}/v1/free/carry     # free, delayed, top 5 each leg
