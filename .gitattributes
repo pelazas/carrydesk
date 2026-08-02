@@ -1,0 +1,8 @@
+# The snapshot archive is append-only JSONL, written on the server and pulled
+# from anywhere. Default merge treats concurrent appends as a conflict, which
+# broke `git pull` on the box the first time both sides had commits.
+#
+# `union` keeps both sides' lines instead of conflicting -- exactly right for an
+# append-only log. Each snapshot line carries a unique as_of_ts, so ordering is
+# recoverable and duplicates are detectable.
+data/snapshots/*.jsonl merge=union
