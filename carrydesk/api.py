@@ -92,25 +92,32 @@ def _cdp_auth():
     host = "api.cdp.coinbase.com"
     base = "/platform/v2/x402"
 
-    def headers_for(path: str) -> dict[str, str]:
+    def headers_for(method: str, path: str) -> dict[str, str]:
         return get_auth_headers(
             GetAuthHeadersOptions(
                 api_key_id=C.CDP_API_KEY_ID,
                 api_key_secret=C.CDP_API_KEY_SECRET,
-                request_method="POST",
+                request_method=method,
                 request_host=host,
                 request_path=f"{base}{path}",
             )
         )
 
+    # The CDP JWT binds the HTTP METHOD as well as the path, so each endpoint
+    # must be signed with the verb the SDK actually uses. Signing everything
+    # POST makes /supported return 401 and every paid route 500 at first
+    # request. Verified in x402/http/facilitator_client.py: get_supported and
+    # the bazaar discovery calls use GET; verify and settle use POST.
+    ENDPOINTS = {
+        "verify": ("POST", "/verify"),
+        "settle": ("POST", "/settle"),
+        "supported": ("GET", "/supported"),
+        "bazaar": ("GET", "/discovery/resources"),
+    }
+
     def create_headers() -> dict[str, dict[str, str]]:
         # Signed per call: these JWTs are short-lived, so they cannot be cached.
-        return {
-            "verify": headers_for("/verify"),
-            "settle": headers_for("/settle"),
-            "supported": headers_for("/supported"),
-            "bazaar": headers_for("/discovery/resources"),
-        }
+        return {k: headers_for(m, p) for k, (m, p) in ENDPOINTS.items()}
 
     log.info("using CDP facilitator with API key %s…", C.CDP_API_KEY_ID[:8])
     return CreateHeadersAuthProvider(create_headers)
