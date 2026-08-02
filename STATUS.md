@@ -63,6 +63,38 @@ action is a human posting once, and it cannot be delegated.
 
 ---
 
+## 2026-08-02 — published to the official MCP Registry
+
+`io.github.pelazas/carrydesk` v0.1.2 is live in
+<https://registry.modelcontextprotocol.io>, which superseded the retired
+third-party list in `modelcontextprotocol/servers` and is the highest-credibility
+MCP listing available.
+
+Getting there needed three things in order:
+
+1. **A published package.** The registry accepts PyPI/npm/OCI, not a git URL.
+   `carrydesk` is on PyPI; install is `uvx --from carrydesk carrydesk-mcp`.
+2. **An ownership token.** The registry proves you control the PyPI package by
+   requiring the literal string `mcp-name: io.github.pelazas/carrydesk` in the
+   **published package README**, followed by a boundary. Confirmed by reading
+   `internal/validators/registries/pypi.go` in the registry source rather than
+   guessing — the GitHub device-flow login that follows is owner-only, so
+   discovering this afterwards would have wasted it. Lives in an HTML comment:
+   an accepted boundary, invisible when rendered, present where the validator
+   looks.
+3. **GitHub device-flow auth**, which only the owner can complete.
+
+**Bug caught before registering:** the MCP server had its version hardcoded at
+`0.1.0`, so after the 0.1.1 release every client's introspection reported a
+version the server was not. Now derived from `carrydesk.__version__`.
+
+**Diagnostic note:** a freshly published version can appear absent for minutes —
+`uv` caches the simple index, and `uv pip install carrydesk==0.1.2` failed with
+"no version of carrydesk==0.1.2" while PyPI plainly had the files. `uv cache
+clean carrydesk` resolves it. Do not assume a broken build.
+
+---
+
 ## 2026-08-02 — listed on Glama
 
 https://glama.ai/mcp/servers/pelazas/carrydesk — approved and scored.

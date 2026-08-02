@@ -52,20 +52,19 @@ Tracked in Notion: <https://app.notion.com/p/3b089b3ff699819b8e32e4596c829ebc>
 
 ---
 
-## Publish to PyPI → official MCP Registry (needs a PyPI token)
+## PyPI + official MCP Registry — DONE 2026-08-02
 
-The official registry is the highest-credibility MCP listing available and
-supersedes the retired list in `modelcontextprotocol/servers`. Publishing needs:
+- **PyPI:** <https://pypi.org/project/carrydesk/> — `uvx --from carrydesk carrydesk-mcp`
+- **Registry:** `io.github.pelazas/carrydesk` v0.1.2, live at
+  <https://registry.modelcontextprotocol.io>
 
-1. A **PyPI account and API token** from the owner — the only blocker.
-2. `mcp-publisher` CLI (`brew install mcp-publisher`), authenticated with
-   GitHub device flow.
-3. A `server.json` naming the server `io.github.pelazas/carrydesk` — the
-   `io.github.<user>/` prefix is required for GitHub-based auth.
+Ownership proof for PyPI is the literal `mcp-name: io.github.pelazas/carrydesk`
+in the published README (HTML comment). Keep it there — removing it breaks
+future republishes.
 
-Side benefit: the install shortens from
-`uvx --from carrydesk carrydesk-mcp` to
-`uvx carrydesk-mcp`, and PyPI itself becomes a discovery surface.
+To ship a new version: bump `pyproject.toml` + `carrydesk/__init__.py`, `uv build`,
+`uv publish`, bump both version fields in `server.json`, then `mcp-publisher publish`
+(re-login with `mcp-publisher login github` if the token has expired).
 
 ---
 
