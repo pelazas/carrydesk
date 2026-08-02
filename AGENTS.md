@@ -65,6 +65,9 @@ X402_PAY_TO=0xYourAddress .venv/bin/python -m uvicorn carrydesk.api:app --port 8
 
 .venv/bin/python -m pytest -q          # 14 tests, no network needed
 CARRYDESK_API_BASE=http://127.0.0.1:8000 .venv/bin/python -m carrydesk.mcp_server
+
+# what a stranger runs (no clone):
+# claude mcp add carrydesk -- uvx --from git+https://github.com/pelazas/carrydesk carrydesk-mcp
 ```
 
 First boot takes a few seconds: it fetches the whole universe's funding history

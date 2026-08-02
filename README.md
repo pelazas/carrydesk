@@ -55,10 +55,10 @@ is exactly the kind of thing a single number would hide.
 ## MCP
 
 ```bash
-git clone https://github.com/pelazas/carrydesk && cd carrydesk
-uv venv --python 3.12 && uv pip install -e .
-claude mcp add carrydesk -- "$PWD/.venv/bin/python" -m carrydesk.mcp_server
+claude mcp add carrydesk -- uvx --from git+https://github.com/pelazas/carrydesk carrydesk-mcp
 ```
+
+No clone, no virtualenv — `uvx` fetches and runs it.
 
 Six tools: `carry_snapshot`, `carry_method`, `carry_health` (free) and
 `carry_rankings`, `carry_history`, `carry_universe` (paid). It talks to

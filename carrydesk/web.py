@@ -210,9 +210,9 @@ Full docs at <a href="{C.PUBLIC_URL}/docs">/docs</a>, method at
 <a href="{C.PUBLIC_URL}/v1/method">/v1/method</a>.</p>
 
 <h2>Use it from an agent</h2>
-<pre><code>git clone https://github.com/pelazas/carrydesk &amp;&amp; cd carrydesk
-uv venv --python 3.12 &amp;&amp; uv pip install -e .
-claude mcp add carrydesk -- "$PWD/.venv/bin/python" -m carrydesk.mcp_server</code></pre>
+<pre><code>claude mcp add carrydesk -- uvx --from git+https://github.com/pelazas/carrydesk carrydesk-mcp</code></pre>
+<p class="dim">One command. No clone, no virtualenv &mdash; <code>uvx</code> fetches and runs it.
+Six tools; the free ones work with no wallet configured.</p>
 
 <div class="foot">
 <p>Gross of fees, slippage and borrow. Taker fees alone can erase this edge.
