@@ -88,11 +88,19 @@ Every response carries three spread figures, not one:
 
 - `carry_spread_annualized` — plain mean, what an equal-weighted book earns
 - `carry_spread_annualized_trimmed` — mean after dropping the extremes
-- `carry_spread_annualized_median` — median
+- `carry_spread_annualized_median` — median, what a typical coin pays
 
-When these diverge sharply, one or two illiquid names are carrying the headline
-and `outlier_dominated` is set to true. Readings of 40% headline against 10%
-median are routine. Quote the median, or quote all three.
+Two more fields tell you how far apart they are:
+
+- `headline_vs_typical` — abs(mean / median). Around 4.0 on live data, meaning
+  the headline routinely overstates a typical coin fourfold. Set your own
+  threshold on this rather than trusting the boolean.
+- `outlier_dominated` — true when median < 0.5 * mean. Fires often, because
+  this universe genuinely is outlier-driven most of the time.
+
+Readings of 50% headline against 13% median are routine. **Quote the median, or
+quote all three.** One or two illiquid coins funding at 200%/yr carry the mean,
+and you cannot trade size in them.
 
 All figures are gross of fees, slippage and borrow. Taker fees alone can erase
 the edge. Funding data is Hyperliquid's own, with no cross-venue reconciliation.

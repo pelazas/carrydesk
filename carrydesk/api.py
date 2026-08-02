@@ -325,6 +325,33 @@ async def method():
             "mean_funding(short_leg) - mean_funding(long_leg), annualized. "
             "Expected gross carry at leverage G is G/2 * carry_spread, before costs."
         ),
+        # Every honesty field, described where an agent actually looks for it.
+        # These were returned by the API but documented nowhere -- and they are
+        # the fields that decide whether the headline should be believed.
+        "outputs": {
+            "carry_spread_annualized": (
+                "The headline. Plain mean of each leg -- what an equal-weighted "
+                "book earns. Quote it only alongside one of the two below."
+            ),
+            "carry_spread_annualized_trimmed": (
+                "Same, after dropping the highest and lowest funder from each "
+                "leg. Shows how much the extremes are contributing."
+            ),
+            "carry_spread_annualized_median": (
+                "Median rather than mean -- what a typical coin pays. This is "
+                "the number to quote if you only quote one."
+            ),
+            "headline_vs_typical": (
+                "abs(mean / median). How many times the headline overstates a "
+                "typical coin. Has run around 4.0 on live data; set your own "
+                "threshold rather than relying on the boolean below."
+            ),
+            "outlier_dominated": (
+                "True when median < 0.5 * mean, i.e. the headline materially "
+                "overstates the typical coin. Fires often, because this "
+                "universe genuinely is outlier-driven most of the time."
+            ),
+        },
         "caveats": [
             "This is a structural risk premium, not a prediction. It can go negative.",
             "Gross of fees, slippage and borrow. Taker fees alone can erase it.",
