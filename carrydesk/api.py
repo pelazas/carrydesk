@@ -16,7 +16,7 @@ from __future__ import annotations
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 
 from . import config as C
@@ -353,7 +353,40 @@ async def universe():
 
 
 @app.get("/", include_in_schema=False)
-async def root():
+async def root(request: Request):
+    """HTML for browsers, JSON for everything else.
+
+    The page is the funnel, so it must render even when the delayed snapshot
+    isn't available yet -- it falls back to the live one rather than 503ing.
+    """
+    accept = request.headers.get("accept", "")
+    if "text/html" in accept:
+        from fastapi.responses import HTMLResponse
+
+        from .web import render
+
+        snap = store.delayed()
+        delayed = snap is not None
+        if snap is None:
+            if store.current is None:
+                return HTMLResponse(
+                    "<h1>carrydesk</h1><p>Upstream data not yet available. "
+                    "Retry shortly.</p>",
+                    status_code=503,
+                )
+            snap = store.current
+        return HTMLResponse(
+            render(free_view(snap), delayed, store.health()["archived_days"])
+        )
+    return _index()
+
+
+@app.get("/api", include_in_schema=False)
+async def api_index():
+    return _index()
+
+
+def _index() -> dict:
     return {
         "service": "carrydesk",
         "what": "Cross-sectional funding-carry rankings for Hyperliquid perpetuals.",
