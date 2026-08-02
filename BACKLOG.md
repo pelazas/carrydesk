@@ -5,27 +5,46 @@ list — everything here has been considered and postponed for a stated reason.
 
 ---
 
-## Submit to curated lists (needs owner's yes)
+## Curated lists — DONE 2026-08-02, two PRs open
 
-**Status: approved in principle, deferred. Owner said "maybe we can do that
-later" on 2026-08-02.**
+- **punkpeye/awesome-mcp-servers** (★91.7k) →
+  [PR #11378](https://github.com/punkpeye/awesome-mcp-servers/pull/11378),
+  added to *Finance & Fintech*. Their CONTRIBUTING explicitly invites agent PRs
+  via a `🤖🤖🤖` title marker, which this PR uses and discloses.
+- **xpaysh/awesome-x402** (★272) →
+  [PR #1106](https://github.com/xpaysh/awesome-x402/pull/1106),
+  added to *Data & Social APIs*.
 
-PRs to public lists where the service would be discovered:
+**Two targets did not survive contact:**
 
-- `awesome-mcp-servers` and the official MCP servers registry — carrydesk is an
-  installable MCP server, which is the strongest channel available
-- x402 ecosystem lists — a live, paying x402 resource is still rare enough to be
-  interesting on its own
-- Hyperliquid tooling lists — smallest audience, highest intent
+- *Hyperliquid tooling lists* — **no such curated list exists.** Searching
+  returns trading bots and SDKs, not awesome-lists. Dropped rather than forced.
+- *Official MCP servers repo* — **retired its third-party list.** It now points
+  at the [MCP Server Registry](https://github.com/modelcontextprotocol/registry),
+  which is a better target but needs a **published package** (PyPI/npm/OCI); a
+  git URL is not an accepted source. See below.
 
-**Why it needs a human yes rather than just doing it:** these PRs appear under
-the owner's GitHub identity in other people's repositories, and a maintainer's
-first impression of them is worth a deliberate decision. Mechanically it is a
-few minutes of work.
+**Optional, not done:** `wong2/awesome-mcp-servers` (★4.2k) and
+`appcypher/awesome-mcp-servers` (★5.7k) are separately maintained and would
+accept a similar entry. Held back deliberately — two PRs across genuinely
+different lists reads as a contribution; five near-duplicate ones read as spam.
 
-**Do it when:** the archive has a few weeks of history. A listing that leads to
-20 snapshots converts worse than one that leads to 500, and you only get one
-first impression per list.
+---
+
+## Publish to PyPI → official MCP Registry (needs a PyPI token)
+
+The official registry is the highest-credibility MCP listing available and
+supersedes the retired list in `modelcontextprotocol/servers`. Publishing needs:
+
+1. A **PyPI account and API token** from the owner — the only blocker.
+2. `mcp-publisher` CLI (`brew install mcp-publisher`), authenticated with
+   GitHub device flow.
+3. A `server.json` naming the server `io.github.pelazas/carrydesk` — the
+   `io.github.<user>/` prefix is required for GitHub-based auth.
+
+Side benefit: the install shortens from
+`uvx --from git+https://github.com/pelazas/carrydesk carrydesk-mcp` to
+`uvx carrydesk-mcp`, and PyPI itself becomes a discovery surface.
 
 ---
 

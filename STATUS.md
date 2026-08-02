@@ -63,6 +63,28 @@ action is a human posting once, and it cannot be delegated.
 
 ---
 
+## 2026-08-02 — first curated-list submissions
+
+Two PRs open, both following each repo's contribution guidelines and both
+disclosing that an agent prepared them:
+
+| List | | PR |
+|---|---|---|
+| punkpeye/awesome-mcp-servers | ★91.7k | [#11378](https://github.com/punkpeye/awesome-mcp-servers/pull/11378) |
+| xpaysh/awesome-x402 | ★272 | [#1106](https://github.com/xpaysh/awesome-x402/pull/1106) |
+
+**Unblocked this first:** installing the MCP server took a clone plus three
+commands, while every comparable listing is a one-liner. Added a
+`carrydesk-mcp` console script, so it is now
+`uvx --from git+https://github.com/pelazas/carrydesk carrydesk-mcp` —
+verified from a clean environment: 105 packages in 345ms, six tools, live data.
+
+**Two planned targets did not survive contact:** no Hyperliquid curated list
+exists, and the official MCP servers repo retired its third-party list in favour
+of a registry that requires a published package. Both recorded in `BACKLOG.md`.
+
+---
+
 ## Where it stands — 2026-08-02
 
 **Live at https://carry.pelazas.com, settling real USDC on Base mainnet.**
