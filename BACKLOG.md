@@ -32,6 +32,26 @@ different lists reads as a contribution; five near-duplicate ones read as spam.
 
 ---
 
+## Carry-spread chart on the public page
+
+**The highest-value remaining build.** The archive is currently a table of
+numbers — accurate, but not persuasive. A line plotting **mean vs median spread
+across every snapshot ever published** turns it into a visible track record, and
+it improves on its own every day.
+
+Plot both series, not just the headline: the mean is routinely dominated by one
+or two illiquid names (first live reading was 39%/yr headline against 9.6%/yr
+median). Showing the gap makes the honesty visible rather than buried in a JSON
+field, and that honesty is the product's main differentiator.
+
+Constraints: no JS frameworks, no external requests — the page must keep working
+when everything else is having a bad day. Inline SVG rendered server-side from
+`store.archive_index()`.
+
+Tracked in Notion: <https://app.notion.com/p/3b089b3ff699819b8e32e4596c829ebc>
+
+---
+
 ## Publish to PyPI → official MCP Registry (needs a PyPI token)
 
 The official registry is the highest-credibility MCP listing available and
