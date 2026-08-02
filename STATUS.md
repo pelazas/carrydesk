@@ -79,6 +79,29 @@ the **free** tier as well as paid.
 
 ---
 
+## 2026-08-02 — iteration 6: **FIRST PAYMENTS SETTLED ON-CHAIN**
+
+The loop is proven end to end, both ways in:
+
+| Path | Price | Result |
+|---|---|---|
+| Direct HTTP → `/v1/universe` | $0.01 | settled, [tx `0x89e868…c80350`](https://sepolia.basescan.org/tx/0x89e86827e68bed37bdc27376f10cd8c325ff3447dc9325ec3641a51cf6c80350) |
+| MCP tool `carry_rankings` | $0.05 | settled, data returned |
+
+Receiving wallet `0x56d4…AB91` went 0 → **0.0600 USDC**. Buyer signed only; the
+facilitator broadcast and paid gas (EIP-3009 `TransferWithAuthorization`), so
+the buyer needed no ETH — confirmed, the buyer wallet holds zero native.
+
+**Faucet gotcha that cost two rounds:** Circle's faucet remembers the last
+network chosen. USDC landed on Arbitrum Sepolia, then Ethereum Sepolia, before
+Base Sepolia. The x402 public facilitator supports **exactly one** EVM network,
+`eip155:84532`. Tell: a correct Base Sepolia tx appears on `sepolia.basescan.org`,
+not `sepolia.etherscan.io`.
+
+**carrydesk can now take money.** What it cannot do is be found — see "Next up".
+
+---
+
 ## 2026-08-02 — iteration 5: **LIVE at https://carry.pelazas.com**
 
 Production Let's Encrypt certificate issued (valid to 2026-10-31). Verified
@@ -155,16 +178,22 @@ ranking (yes), domain (carry.pelazas.com), receiving address.
 
 ## Next up (in order)
 
-1. **Domain + nginx + TLS.** The archive is accumulating, but nothing is
-   reachable from outside. This is the only thing standing between "running"
-   and "usable".
-2. Turn the paywall on with a real address, on Base Sepolia, and settle one real
-   testnet payment end to end.
-3. Publish the free snapshot daily. `posts/*.md` renders already; publishing is
-   still a deliberate human step by design for the first couple of weeks.
-4. Mainnet: needs Coinbase CDP API keys, since the public facilitator is
-   testnet-only.
-5. Passive listings (x402 bazaar, RapidAPI) — cheap, one-time, low volume.
+The build is done. Everything below is distribution, and the first two are the
+owner's decisions rather than code.
+
+1. **Publish the daily snapshot.** `scripts/daily_post.py` renders and gates it
+   already; nothing is posted anywhere. Needs the owner's account and voice.
+   This is the growth engine — the archive only converts into anything if it is
+   visible.
+2. **Decide whether the repo goes public.** It is private, so nobody can install
+   the MCP server — which is the best distribution channel we have. There is no
+   secret in it: the strategy is a documented public premium and the code
+   transforms public data.
+3. **Mainnet payments.** Needs Coinbase CDP API keys; the public facilitator is
+   testnet-only. Worth doing once someone actually wants the data.
+4. **Listings** — x402 bazaar, MCP directories. Blocked on (2).
+5. **Cross-venue funding** (Binance collectors already exist in the trading
+   repo). Hold until there is demand; one venue done well beats two done badly.
 
 ---
 
