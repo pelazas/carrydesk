@@ -11,6 +11,13 @@ dependencies = [
     "cdp-sdk>=1.47.0",   # only needed for Base mainnet (CDP facilitator auth)
 ]
 
+[project.scripts]
+# Lets the MCP server be installed and run in one command with no clone:
+#   uvx --from git+https://github.com/pelazas/carrydesk carrydesk-mcp
+# Every comparable entry on the MCP lists is a one-liner; a three-step clone
+# is the single biggest friction point for anyone trying this.
+carrydesk-mcp = "carrydesk.mcp_server:main"
+
 [project.optional-dependencies]
 dev = ["pytest>=8.0", "pytest-asyncio>=0.24"]
 
