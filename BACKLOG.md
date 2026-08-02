@@ -32,6 +32,42 @@ different lists reads as a contribution; five near-duplicate ones read as spam.
 
 ---
 
+## Channels evaluated and rejected (2026-08-02)
+
+Checked against each list's own rules rather than assumed. Recorded so they do
+not get re-suggested.
+
+**Blocked by an explicit rule — revisit on a date:**
+
+- **awesome-selfhosted** (★310k) — requires the project to have been *first
+  released more than 4 months ago*, with tagged releases. carrydesk is hours
+  old. Genuinely eligible around **2026-12**; it is self-hostable, MIT, and
+  depends on no specific cloud provider, so it should qualify then.
+- **awesome-claude-code** (★51.5k) — good fit in principle, but its CONTRIBUTING
+  says recommendations **must be made by a human through the web issue form**,
+  that submitting via `gh` CLI risks being *restricted from the repository*, and
+  that the right order is "build it → get users → submit". So: not by an agent,
+  and not yet. Revisit once carrydesk has real users.
+
+**Wrong list — do not submit:**
+
+- **awesome-rust** — carrydesk is Python.
+- **awesome-cli-apps** — it is an API and MCP server, not a CLI app.
+- **awesome-terminal / awesome-macos-command-line** — not a terminal tool.
+
+**Wrong audience, negligible return:**
+
+- **AlternativeTo** — a consumer-software directory where users arrive searching
+  "alternative to <product>". carrydesk has no anchor product to be an
+  alternative *to*, and the audience is not people who write trading bots.
+- **Slant** — a "what are the best X" recommendation site with little remaining
+  traffic and no category this fits.
+
+**The general rule this encodes:** two PRs to lists we genuinely belong on read
+as contributing; seven submissions across lists we do not fit read as spam, and
+it is the owner's GitHub identity attached to every one of them. Maintainers
+remember names. Fit first, volume never.
+
 ## Carry-spread chart — DONE 2026-08-02
 
 Live on both the front page and `/archive`. Server-rendered inline SVG, no JS
