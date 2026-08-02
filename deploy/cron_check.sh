@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Cron entrypoint for the ops probe. Alerts to Telegram only on failure.
 #
-#   */10 * * * * $HOME/carrydesk/deploy/cron_check.sh
+#   */10 * * * * ${CARRYDESK_HOME}/deploy/cron_check.sh
 #
 # Delivery goes straight to the Telegram Bot API, not through hermes:
 #   - deterministic and instant; no LLM in the alerting path (see DECISIONS D5)
@@ -12,15 +12,27 @@
 # The token is read from hermes' env file and is never printed or copied.
 set -uo pipefail
 
-HOME_DIR="${CARRYDESK_HOME:-$HOME/carrydesk}"
-ENV_FILE="${HERMES_ENV:-$HOME/.hermes/.env}"
-CHAT_ID="${TELEGRAM_CHAT_ID:-<chat-id>}"
+# Defaults to the repo this script lives in, so it works on any host.
+HOME_DIR="${CARRYDESK_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
+
+# Host-specific values (where the Telegram bot token lives, which chat to alert)
+# come from the server's .env, which is never committed. Alerting degrades to a
+# log line if they are unset rather than failing the health check itself.
+if [ -f "$HOME_DIR/.env" ]; then
+  set -a; . "$HOME_DIR/.env"; set +a
+fi
+ENV_FILE="${HERMES_ENV:-}"
+CHAT_ID="${TELEGRAM_CHAT_ID:-}"
 URL="${CARRYDESK_URL:-http://127.0.0.1:8000}"
 STATE="$HOME_DIR/.last_alert_state"
 ALERT_LOG="$HOME_DIR/alert.log"
 
 notify() {
   local msg="$1" token http
+  if [ -z "$ENV_FILE" ] || [ -z "$CHAT_ID" ]; then
+    echo "$(date -u +%FT%TZ) NOT DELIVERED (HERMES_ENV/TELEGRAM_CHAT_ID unset): ${msg:0:160}" >> "$ALERT_LOG"
+    return 1
+  fi
   token="$(grep -m1 '^TELEGRAM_BOT_TOKEN=' "$ENV_FILE" 2>/dev/null | cut -d= -f2- | tr -d '"'"'"' \r')"
   if [ -z "$token" ]; then
     echo "$(date -u +%FT%TZ) DELIVERY FAILED: no TELEGRAM_BOT_TOKEN in $ENV_FILE" >> "$ALERT_LOG"

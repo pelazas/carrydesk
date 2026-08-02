@@ -7,7 +7,7 @@ MAILTO or a `|| hermes --deliver telegram:<chat_id>` wrapper only fires on real
 problems.
 
     */10 * * * * /path/.venv/bin/python scripts/ops_check.py || \
-      hermes 'carrydesk alert' --deliver telegram:<chat-id>
+      hermes 'carrydesk alert' --deliver telegram:<your-chat-id>
 
 Checks, in order of how much they matter:
   1. Is the service answering at all?

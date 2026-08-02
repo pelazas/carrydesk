@@ -5,10 +5,11 @@
 # that the ranking was published in advance. It cannot be backfilled, so this
 # running reliably matters more than any feature.
 #
-#   0 3 * * * $HOME/carrydesk/deploy/cron_archive.sh
+#   0 3 * * * ${CARRYDESK_HOME}/deploy/cron_archive.sh
 set -uo pipefail
 
-HOME_DIR="${CARRYDESK_HOME:-$HOME/carrydesk}"
+# Defaults to the repo this script lives in, so it works on any host.
+HOME_DIR="${CARRYDESK_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 cd "$HOME_DIR" || exit 1
 
 export GIT_SSH_COMMAND="ssh -i $HOME/.ssh/id_carrydesk -o IdentitiesOnly=yes"
@@ -31,6 +32,6 @@ if git diff --cached --quiet 2>/dev/null; then
 fi
 
 n="$(git diff --cached --numstat | wc -l | tr -d ' ')"
-git -c user.name="carrydesk" -c user.email="carrydesk@the-server" \
+git -c user.name="carrydesk" -c user.email="carrydesk@localhost" \
     commit -q -m "archive $(date -u +%F): $n snapshot file(s)" || exit 1
 git push -q origin master || exit 1

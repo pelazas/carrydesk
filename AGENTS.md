@@ -1,64 +1,62 @@
 # AGENTS.md — context for an AI agent picking up carrydesk
 
 Read this first. It tells you what this repo is, what state it is in, what is
-verified vs. assumed, and what you are allowed to do without asking.
+verified vs. assumed, and what you may do without asking.
 
 ---
 
 ## 1. What this is
 
-**carrydesk sells the intermediate output of an existing live trading bot as a
-metered API, paid per call in USDC.**
+**carrydesk publishes a cross-sectional funding-carry ranking for Hyperliquid
+perpetuals and sells it per call in USDC.**
 
-The owner (`pelazas`) runs a real-money market-neutral funding-carry bot on
-Hyperliquid (separate repo: `~/Desktop/systematic-trading`, deployed on the
-droplet `the-server`). That bot computes, every cycle, a **cross-sectional ranking
-of ~40 liquid Hyperliquid perps by trailing 14-day mean funding rate**, then goes
-long the most-negative and short the most-positive, dollar-neutral.
+Every rebalance, rank the liquid Hyperliquid perp universe by trailing 14-day
+mean funding. The most negative names pay you to hold them long; the most
+positive pay you to short them. The spread between the two legs is the carry —
+a structural risk premium, not a prediction.
 
-That ranking is valuable on its own and is derived entirely from **public** data.
-carrydesk publishes it:
+The same signal is traded by a live market-neutral book, which is why the
+parameters are what they are. That book is a separate, private project; this
+repo neither imports from it nor connects to it.
 
 | Surface | Audience | Payment |
 |---|---|---|
 | `/v1/free/*` — top-5 each leg, delayed 24h | the funnel | none |
 | `/v1/carry/*` — full live ranking + history | devs, bots | x402, USDC per call |
-| MCP server — same data as agent tools | Claude/Cursor users | same, transparent |
+| MCP server — the same data as agent tools | Claude/Cursor users | same, transparent |
 
-**The edge is not being sold.** Funding rates are public; the ranking is a
-transform of public data; the strategy is a documented structural risk premium,
-not a secret. What is sold is the computation, the archive, and the reliability.
+**No edge is being sold.** Funding rates are public, the ranking is a transform
+of public data, and the strategy is a documented premium. What is sold is the
+computation, the archive, and the reliability.
 
 ---
 
-## 2. Status (2026-08-02)
+## 2. Status
 
-**Working and verified locally. Not deployed. No revenue. No wallet configured.**
+**Live and taking payments on testnet. No distribution yet.**
 
 | Piece | State |
 |---|---|
-| Hyperliquid data client | ✅ verified against live API (177 perps, 38 above the $1m/day floor) |
-| Carry ranking maths | ✅ 14 unit tests pass |
-| FastAPI service | ✅ all endpoints return real data |
-| x402 paywall | ✅ verified: 402 challenges with correct USDC amounts on Base Sepolia |
-| MCP server | ✅ verified end-to-end: 6 tools over stdio, real data |
-| Deployment | ❌ not done |
-| Mainnet payments | ❌ blocked on a receiving wallet + CDP keys |
-| Content/proof feed | ❌ not built |
-| Ops monitor | ❌ not built |
+| Hyperliquid data client | ✅ verified live (177 perps, ~38 above the $1m/day floor) |
+| Carry ranking maths | ✅ 14 unit tests |
+| FastAPI service | ✅ deployed, HTTPS, real data |
+| x402 paywall | ✅ **real payments settled on Base Sepolia** |
+| MCP server | ✅ 6 tools, verified against production, paid path works |
+| Ops monitor | ✅ every 10 min → Telegram, verified with a real alert |
+| Snapshot archive | ✅ append-only, auto-committed daily |
+| Mainnet payments | ❌ needs Coinbase CDP API keys |
+| Distribution | ❌ **nothing published anywhere** |
 
-See `STATUS.md` for the current blocking items and `DECISIONS.md` for why things
-are the way they are.
+`STATUS.md` has the running log; `DECISIONS.md` has the reasoning.
 
 ---
 
 ## 3. Run it
 
 ```bash
-cd ~/Desktop/carrydesk
 uv venv --python 3.12 && uv pip install -e ".[dev]"
 
-# Fully open, no paywall (this is the dev default when X402_PAY_TO is unset)
+# Fully open, no paywall — the dev default when X402_PAY_TO is unset
 .venv/bin/python -m uvicorn carrydesk.api:app --port 8000 --reload
 
 # With the paywall on
@@ -68,8 +66,11 @@ X402_PAY_TO=0xYourAddress .venv/bin/python -m uvicorn carrydesk.api:app --port 8
 CARRYDESK_API_BASE=http://127.0.0.1:8000 .venv/bin/python -m carrydesk.mcp_server
 ```
 
-First boot takes ~5s: it fetches 38 coins' worth of funding history before
-serving. `/health` reports `has_snapshot: false` until that lands.
+First boot takes a few seconds: it fetches the whole universe's funding history
+before serving. `/health` reports `has_snapshot: false` until that lands.
+
+Host-specific deployment values live in `.env` on the server and are
+deliberately not in this repo. See `deploy/DEPLOY.md`.
 
 ---
 
@@ -77,45 +78,51 @@ serving. `/health` reports `has_snapshot: false` until that lands.
 
 ```
 carrydesk/
-  config.py      all knobs, env-overridable. Signal params mirror the trading bot.
+  config.py      all knobs, env-overridable
   hl.py          Hyperliquid public REST client. Read-only, no credentials.
-  carry.py       THE PRODUCT. Pure functions: ranking, leg assignment, spread maths.
-  store.py       snapshot cache, validation gate, JSONL archive, delayed free view.
-  api.py         FastAPI app + x402 paywall + paywall self-check.
+  carry.py       THE PRODUCT. Pure functions: ranking, legs, spread maths.
+  store.py       snapshot cache, validation gate, JSONL archive, delayed view
+  api.py         FastAPI app + x402 paywall + paywall self-check
   mcp_server.py  MCP tools over the HTTP API. Optional auto-payment.
+scripts/
+  ops_check.py     health probe, exit 0/1/2
+  daily_post.py    renders the proof post; does NOT publish
+  test_payment.py  end-to-end 402 -> pay -> data
 tests/
   test_carry.py    ranking maths, no network
-  test_paywall.py  regression guard for the paywall-bypass bug (see §6)
+  test_paywall.py  regression guard for the paywall-bypass bug (§6)
 ```
 
 Data flows one way: `hl.py` → `carry.py` → `store.py` → (`api.py` | `mcp_server.py`).
-`carry.py` never does I/O, which is why it is the only part with real test coverage.
+`carry.py` never does I/O, which is why it carries the real test coverage.
 
 ---
 
-## 5. Hard-won gotchas (each cost a debugging cycle — don't rediscover them)
+## 5. Hard-won gotchas — don't rediscover these
 
 1. **x402 networks are CAIP-2 ids, not friendly names.** `base-sepolia` fails
    route validation with `No scheme for "exact" on "base-sepolia"`. Use
-   `eip155:84532` (Base Sepolia) or `eip155:8453` (Base mainnet). Verified
-   against `https://x402.org/facilitator/supported`.
-
-2. **The EVM `exact` scheme is not registered by default.** You must call
+   `eip155:84532` (Base Sepolia) or `eip155:8453` (Base mainnet).
+2. **The EVM `exact` scheme is not registered by default.** Call
    `register_exact_evm_server(server)` or every protected route 500s on first
-   request. `payment_middleware_from_config` does *not* do this for you.
-
+   request. `payment_middleware_from_config` does *not* do it for you.
 3. **x402 route patterns use `[param]` / `:param` / `*`, NOT FastAPI's
-   `{param}`.** This is the dangerous one — see §6.
+   `{param}`.** The dangerous one — see §6.
+4. **x402 v2 returns an empty JSON body on 402.** The requirements are base64
+   in the `payment-required` **header**. An empty `{}` body is correct.
+5. **The public facilitator is testnet-only** and supports exactly one EVM
+   network, `eip155:84532`. Mainnet needs a CDP-backed facilitator + API keys.
+6. **Buyers need no ETH.** The `exact` scheme uses EIP-3009
+   `transferWithAuthorization`: the buyer signs, the facilitator broadcasts and
+   pays gas. Verified — our test buyer holds zero native currency.
+7. **Circle's faucet remembers the last network you chose.** A correct Base
+   Sepolia drip appears on `sepolia.basescan.org`, not `sepolia.etherscan.io`.
+8. **Hyperliquid funding is hourly**: annualized = rate × 24 × 365, and a
+   14-day lookback is 336 points. Coins under 50% coverage are dropped.
+9. **macOS has no `timeout`**, so `timeout N bash -c '… /dev/tcp/…'` port probes
+   report everything as filtered whether or not it is. Use `curl --max-time`.
 
-4. **x402 v2 returns an empty JSON body on 402.** The payment requirements are
-   base64 in the `payment-required` **header**. An empty `{}` body is correct,
-   not a bug.
-
-5. **The public facilitator (`x402.org/facilitator`) is testnet-only.** Base
-   mainnet USDC needs a CDP-backed facilitator and Coinbase CDP API keys.
-
-6. **Hyperliquid funding is hourly**, so annualized = rate × 24 × 365, and a
-   14-day lookback is 336 points. Coins with <50% coverage are dropped.
+Deployment/TLS gotchas live in `deploy/DEPLOY.md` §4.
 
 ---
 
@@ -126,7 +133,7 @@ x402 `re.escape` it to `^/v1/carry/history/\{coin\}$`, which **never matches a
 real request**. The endpoint then returns **200 and serves paid data for free**,
 with nothing in the logs and no error anywhere.
 
-This shipped and was caught only because the endpoint was manually curl'd.
+This shipped, and was caught only because the endpoint was manually curl'd.
 
 Two guards now exist and **must not be removed**:
 
@@ -135,30 +142,30 @@ Two guards now exist and **must not be removed**:
 - `tests/test_paywall.py` — the same assertion in CI, plus a test that the guard
   itself fails on a deliberately broken pattern.
 
-If you add a paid route, you must add it to `PAYWALL_SELF_CHECK` in `api.py`.
-The self-check fails closed on any route without a sample.
+Adding a paid route means adding it to `PAYWALL_SELF_CHECK` in `api.py`. The
+check fails closed on any route without a sample.
 
 ---
 
 ## 7. Rules for an agent working on this
 
 1. **Never put an LLM in the data path, the pricing path, or the payment path.**
-   Those are deterministic on purpose. Agents belong in content and support only.
-2. **Never weaken the validation gate** in `store.py`. Publishing a wrong number
-   unattended is worse than publishing nothing — a bad snapshot must raise and
-   let the previous good one keep serving.
-3. **Never commit `.env`, a private key, or a wallet seed.** `CARRYDESK_PRIVATE_KEY`
-   is for the MCP *client* to spend from; it is a hot wallet and should hold only
-   small amounts.
-4. **Do not touch `~/Desktop/systematic-trading`** unless asked. That repo trades
-   real money. carrydesk only *mirrors* its signal parameters; it does not import
-   from it and must not connect to the bot's wallet.
-5. **The archive is append-only.** `data/snapshots/*.jsonl` is the track record.
-   Rewriting history destroys the only thing that makes the product credible.
-6. **Be honest in published numbers.** The headline carry spread is routinely
-   dominated by one or two illiquid coins; that is why `carry_spread_annualized_trimmed`
-   and `outlier_dominated` exist and are shown in the free tier too. Do not
-   quietly drop them to make the number look better.
+   Those are deterministic on purpose. Agents belong in content and support.
+2. **Never weaken the validation gate** in `store.py`. A bad snapshot must raise
+   and let the previous good one keep serving. Publishing a wrong number
+   unattended costs more than publishing nothing.
+3. **Never commit `.env`, a private key, or a seed phrase.**
+   `CARRYDESK_PRIVATE_KEY` is a *client-side* hot wallet for spending; it should
+   hold small amounts. `X402_PAY_TO` is receive-only and needs no key at all.
+4. **The archive is append-only.** `data/snapshots/*.jsonl` is the track record
+   and cannot be backfilled. Rewriting it destroys the only thing that makes the
+   product credible.
+5. **Be honest in published numbers.** The headline spread is routinely
+   dominated by one or two illiquid coins — that is why
+   `carry_spread_annualized_trimmed`, `_median` and `outlier_dominated` exist
+   and appear in the free tier too. Do not quietly drop them to look better.
+6. **Keep host specifics out of this repo.** It is public. Server addresses,
+   chat ids, key paths and secret file locations belong in `.env` on the box.
 
 ---
 
@@ -166,13 +173,11 @@ The self-check fails closed on any route without a sample.
 
 Stated plainly so nobody builds on sand:
 
-- **No mainnet payment has ever settled.** The paywall is verified on Base
-  Sepolia with a dummy `payTo`. Real USDC settlement is untested.
-- **No deployment exists.** Nothing has run longer than a few minutes.
-- **The archive is one day old at most**, so `/v1/carry/history/*` is nearly
-  empty and the free tier falls back to live data until 24h of snapshots exist.
-- **No mainnet payment path exists.** Live at `https://carry.pelazas.com` on
-  Base **Sepolia** only; mainnet needs Coinbase CDP API keys.
-- **Backtest numbers are not republished here.** The Sharpe ~1.0 / ~15%/yr
-  figures live in the trading repo's `RESULTS.md` and describe the *strategy*,
-  not this API's uptime or data quality.
+- **No mainnet payment has ever settled.** Everything is Base Sepolia.
+- **Nobody has ever bought this.** The only payments were our own tests.
+- **No distribution has happened.** Nothing is listed or published anywhere.
+- **The archive is days old at most**, so `/v1/carry/history/*` is thin and the
+  free tier falls back to live data until 24h of snapshots exist.
+- **Uptime is unproven.** The service has not run long enough to have a record.
+- **Strategy backtest numbers are not republished here.** They describe the
+  strategy, not this API's data quality or availability.

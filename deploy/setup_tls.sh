@@ -12,7 +12,7 @@
 #   3. opens 80/443 in ufw, only if ufw is already active
 #   4. enables + starts caddy
 #
-# WHAT IT DOES NOT DO: it never touches other-services, hermes, the carrydesk
+# WHAT IT DOES NOT DO: it never touches other services on the box, hermes, the carrydesk
 # service, any user data, or any existing firewall rule other than adding
 # 80/443. It is idempotent -- running it twice is harmless.
 #
