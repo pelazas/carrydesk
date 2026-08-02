@@ -64,7 +64,7 @@ supersedes the retired list in `modelcontextprotocol/servers`. Publishing needs:
    `io.github.<user>/` prefix is required for GitHub-based auth.
 
 Side benefit: the install shortens from
-`uvx --from git+https://github.com/pelazas/carrydesk carrydesk-mcp` to
+`uvx --from carrydesk carrydesk-mcp` to
 `uvx carrydesk-mcp`, and PyPI itself becomes a discovery surface.
 
 ---

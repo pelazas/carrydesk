@@ -74,7 +74,7 @@ The buyer needs no ETH: settlement uses EIP-3009, so the facilitator sponsors ga
 An MCP server exposes the same data as tools:
 
 ```
-claude mcp add carrydesk -- uvx --from git+https://github.com/pelazas/carrydesk carrydesk-mcp
+claude mcp add carrydesk -- uvx --from carrydesk carrydesk-mcp
 ```
 
 Tools: `carry_snapshot`, `carry_method`, `carry_health` (free);

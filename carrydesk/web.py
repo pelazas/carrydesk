@@ -210,7 +210,7 @@ Full docs at <a href="{C.PUBLIC_URL}/docs">/docs</a>, method at
 <a href="{C.PUBLIC_URL}/v1/method">/v1/method</a>.</p>
 
 <h2>Use it from an agent</h2>
-<pre><code>claude mcp add carrydesk -- uvx --from git+https://github.com/pelazas/carrydesk carrydesk-mcp</code></pre>
+<pre><code>claude mcp add carrydesk -- uvx --from carrydesk carrydesk-mcp</code></pre>
 <p class="dim">One command. No clone, no virtualenv &mdash; <code>uvx</code> fetches and runs it.
 Six tools; the free ones work with no wallet configured.</p>
 

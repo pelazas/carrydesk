@@ -55,7 +55,7 @@ is exactly the kind of thing a single number would hide.
 ## MCP
 
 ```bash
-claude mcp add carrydesk -- uvx --from git+https://github.com/pelazas/carrydesk carrydesk-mcp
+claude mcp add carrydesk -- uvx --from carrydesk carrydesk-mcp
 ```
 
 No clone, no virtualenv — `uvx` fetches and runs it.

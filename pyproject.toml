@@ -3,6 +3,20 @@ name = "carrydesk"
 version = "0.1.0"
 description = "Cross-sectional funding-carry rankings for Hyperliquid perpetuals, sold per call in USDC."
 requires-python = ">=3.12"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Carlos Pelazas" }]
+keywords = ["hyperliquid", "funding-rate", "perpetual-futures", "x402", "mcp", "market-neutral", "carry"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Office/Business :: Financial :: Investment",
+    "Typing :: Typed",
+]
+
 dependencies = [
     "fastapi[standard]>=0.115.0",
     "httpx>=0.28.1",
@@ -11,9 +25,19 @@ dependencies = [
     "cdp-sdk>=1.47.0",   # only needed for Base mainnet (CDP facilitator auth)
 ]
 
+# NOTE: keep every array-valued key of [project] ABOVE the first sub-table.
+# A TOML table runs until the next header, so putting [project.urls] before
+# `dependencies` silently swallows it and the build fails with
+# "URL `dependencies` of field `project.urls` must be a string".
+[project.urls]
+Homepage = "https://carry.pelazas.com"
+Source = "https://github.com/pelazas/carrydesk"
+Documentation = "https://carry.pelazas.com/docs"
+Archive = "https://carry.pelazas.com/archive"
+
 [project.scripts]
 # Lets the MCP server be installed and run in one command with no clone:
-#   uvx --from git+https://github.com/pelazas/carrydesk carrydesk-mcp
+#   uvx --from carrydesk carrydesk-mcp
 # Every comparable entry on the MCP lists is a one-liner; a three-step clone
 # is the single biggest friction point for anyone trying this.
 carrydesk-mcp = "carrydesk.mcp_server:main"
