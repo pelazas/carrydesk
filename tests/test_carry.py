@@ -112,3 +112,59 @@ def test_free_view_withholds_the_full_universe():
 
 def test_annualize_uses_hourly_funding():
     assert annualize(1e-5) == pytest.approx(1e-5 * 24 * 365)
+
+
+# --- the honesty flag -------------------------------------------------------
+#
+# The original rule compared only trimmed-vs-mean and never looked at the
+# median. Across the first 50 archived snapshots the median sat at 0.24 of the
+# mean -- the headline overstated a typical coin roughly fourfold -- and the
+# flag fired exactly once. The signal meant to carry the product's honesty was
+# silent almost exactly when it mattered. These pin the fixed behaviour.
+
+
+def test_flag_fires_when_the_median_is_far_below_the_headline():
+    """The real-world case the old rule missed: mean ~3.8x the median."""
+    pairs = [mk(c, f) for c, f in [
+        ("A", -1e-5), ("B", -1e-5), ("C", -1e-5),
+        ("X", 1e-5), ("Y", 1e-5), ("HUGE", 3e-4),
+    ]]
+    snap = build(pairs, k=3)
+    assert snap["carry_spread_annualized"] > 3 * snap["carry_spread_annualized_median"]
+    assert snap["outlier_dominated"] is True
+
+
+def test_flag_is_quiet_when_the_coins_agree():
+    """It must not be permanently on, or nobody will read it."""
+    pairs = [mk(c, f) for c, f in [
+        ("A", -2e-5), ("B", -2.1e-5), ("C", -1.9e-5),
+        ("X", 2e-5), ("Y", 2.1e-5), ("Z", 1.9e-5),
+    ]]
+    snap = build(pairs, k=3)
+    assert snap["outlier_dominated"] is False
+
+
+def test_headline_vs_typical_reports_the_actual_multiple():
+    pairs = [mk(c, f) for c, f in [
+        ("A", -1e-5), ("B", -1e-5), ("C", -1e-5),
+        ("X", 1e-5), ("Y", 1e-5), ("HUGE", 3e-4),
+    ]]
+    snap = build(pairs, k=3)
+    ratio = snap["headline_vs_typical"]
+    assert ratio is not None and ratio > 3
+    assert ratio == pytest.approx(
+        abs(snap["carry_spread_annualized"] / snap["carry_spread_annualized_median"]), rel=1e-2
+    )
+
+
+def test_headline_vs_typical_is_none_rather_than_dividing_by_zero():
+    pairs = [mk(c, 0.0) for c in ("A", "B", "C", "D")]
+    snap = build(pairs, k=2)
+    assert snap["headline_vs_typical"] is None
+    assert snap["outlier_dominated"] is False
+
+
+def test_free_view_carries_both_honesty_fields():
+    pairs = [mk(f"C{i}", (i - 10) * 1e-5) for i in range(20)]
+    fv = free_view(build(pairs, k=6), k=2)
+    assert "outlier_dominated" in fv and "headline_vs_typical" in fv

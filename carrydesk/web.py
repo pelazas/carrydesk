@@ -239,7 +239,9 @@ def _honesty_block(snap: dict) -> str:
     big = [r for r in snap.get("shorts", []) if (r.get("mean_funding_annualized") or 0) > 0.5]
     big.sort(key=lambda r: -(r["mean_funding_annualized"]))
 
-    if not big or abs(mean - median) < 0.05:
+    # Use the snapshot's own flag so the page and the API can never disagree
+    # about whether the headline is misleading -- they did, on the same data.
+    if not snap.get("outlier_dominated") or not big:
         return f"""<h2>About that number</h2>
 <p>Today the three readings agree closely &mdash; mean {_pct(mean)}, trimmed
 {_pct(trimmed)}, median {_pct(median)}. No single coin is carrying the headline,

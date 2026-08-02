@@ -138,9 +138,26 @@ def build_ranking(
         # carrying the number and it will not survive at size.
         "carry_spread_annualized_trimmed": annualize(spread_trimmed),
         "carry_spread_annualized_median": annualize(spread_median),
+        # How many times bigger the headline is than what a typical coin pays.
+        # A plain number beats a boolean: it cannot be mis-thresholded, and a
+        # caller can set their own bar. ~4.0 has been the norm on real data.
+        "headline_vs_typical": (
+            round(abs(spread_hourly) / abs(spread_median), 2)
+            if spread_median
+            else None
+        ),
+        # Fires when the headline materially overstates the typical coin.
+        #
+        # Was `trimmed < 0.5 * mean`, which ignored the median entirely and
+        # fired on 1 of the first 50 archived snapshots -- while the median sat
+        # at 0.24 of the mean on nearly all of them. The flag meant to be the
+        # honesty signal was silent almost exactly when it was needed.
+        #
+        # It now fires often, because this universe genuinely is outlier-driven
+        # almost all the time. That is a fact about perp funding, not a
+        # mis-tuned threshold, and the ratio above carries the severity.
         "outlier_dominated": bool(
-            abs(annualize(spread_hourly)) > 0
-            and abs(annualize(spread_trimmed)) < 0.5 * abs(annualize(spread_hourly))
+            spread_median and abs(spread_median) < 0.5 * abs(spread_hourly)
         ),
         "long_leg_mean_annualized": annualize(long_mean),
         "short_leg_mean_annualized": annualize(short_mean),
@@ -174,6 +191,7 @@ def free_view(snapshot: dict, k: int = C.FREE_TIER_K) -> dict:
         "carry_spread_annualized_trimmed": snapshot.get("carry_spread_annualized_trimmed"),
         "carry_spread_annualized_median": snapshot.get("carry_spread_annualized_median"),
         "outlier_dominated": snapshot.get("outlier_dominated"),
+        "headline_vs_typical": snapshot.get("headline_vs_typical"),
         "long_leg_mean_annualized": snapshot.get("long_leg_mean_annualized"),
         "short_leg_mean_annualized": snapshot.get("short_leg_mean_annualized"),
         "expected_annual_return": snapshot.get("expected_annual_return"),
