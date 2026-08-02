@@ -220,7 +220,25 @@ def render(snap: dict, delayed: bool, archived_days: int, json_ld: str = "",
     freshness = (
         f"delayed {C.FREE_TIER_DELAY_HOURS}h" if delayed else "live"
     )
-    direction = "paying" if median >= 0 else "charging"
+
+    # The headline MUST follow the sign. A carry spread goes negative -- this
+    # page says so two paragraphs later -- and a fixed "somebody is paying you"
+    # would be a plain falsehood on those days, while the lede beneath it said
+    # the opposite. On a product whose only real asset is being trusted about
+    # numbers, that is the most expensive bug available.
+    if median >= 0:
+        headline = "Somebody is paying you<br>to take the other side."
+        lede_tail = (
+            f"Right now the market is paying <span class=\"big\">{_pct(median)}</span> a year "
+            "to hold a position that does not care where Bitcoin goes."
+        )
+    else:
+        headline = "Today, taking the other side<br>costs you money."
+        lede_tail = (
+            f"Right now that flips: the typical coin is <span class=\"big\">{_pct(median)}</span> "
+            "a year against you. This is the same risk premium seen from the other side, and it "
+            "is why the carry is rent rather than a free lunch."
+        )
 
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
@@ -231,11 +249,9 @@ def render(snap: dict, delayed: bool, archived_days: int, json_ld: str = "",
 <script type="application/ld+json">{json_ld}</script>
 <style>{CSS}</style></head><body><div class="wrap">
 
-<h1 class="hero">Somebody is paying you<br>to take the other side.</h1>
+<h1 class="hero">{headline}</h1>
 <p class="lede">On perpetual futures, whichever crowd is more crowded pays the other one
-&mdash; <strong>every hour, automatically</strong>. Right now the market is {direction}
-<span class="big">{_pct(median)}</span> a year to hold a position that does not care
-where Bitcoin goes.</p>
+&mdash; <strong>every hour, automatically</strong>. {lede_tail}</p>
 <p class="sub">{n} liquid Hyperliquid perps &middot; {lookback}-day trailing funding &middot;
 {as_of} &middot; {freshness}</p>
 
