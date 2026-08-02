@@ -45,7 +45,8 @@ computation, the archive, and the reliability.
 | Ops monitor | ✅ every 10 min → Telegram, verified with a real alert |
 | Snapshot archive | ✅ append-only, auto-committed daily |
 | Mainnet payments | ✅ live, two settlements confirmed on-chain |
-| Distribution | ❌ **nothing published anywhere** |
+| Discovery surfaces | ✅ llms.txt, robots.txt, sitemap, JSON-LD, /archive |
+| Distribution | ⚠️ passive only — nothing posted or listed by a human |
 
 `STATUS.md` has the running log; `DECISIONS.md` has the reasoning.
 
@@ -84,8 +85,11 @@ carrydesk/
   store.py       snapshot cache, validation gate, JSONL archive, delayed view
   api.py         FastAPI app + x402 paywall + paywall self-check
   mcp_server.py  MCP tools over the HTTP API. Optional auto-payment.
+  discovery.py   llms.txt / robots.txt / sitemap / JSON-LD, all from config
+  web.py         the public page and the archive page
 scripts/
   ops_check.py     health probe, exit 0/1/2
+  weekly_audit.py  slower checks: cert expiry, archive growth, honesty flags
   daily_post.py    renders the proof post; does NOT publish
   test_payment.py  end-to-end 402 -> pay -> data
 tests/

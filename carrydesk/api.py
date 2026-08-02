@@ -447,10 +447,55 @@ async def root(request: Request):
                     status_code=503,
                 )
             snap = store.current
+        from .discovery import json_ld
+
+        fv = free_view(snap)
         return HTMLResponse(
-            render(free_view(snap), delayed, store.health()["archived_days"])
+            render(fv, delayed, store.health()["archived_days"], json_ld(fv, store.totals()))
         )
     return _index()
+
+
+# --- discovery surfaces -----------------------------------------------------
+# These exist so an agent or crawler can find and understand the service without
+# a human in the loop. Generated from config so they cannot drift from reality.
+
+
+@app.get("/llms.txt", include_in_schema=False)
+async def llms_txt():
+    from fastapi.responses import PlainTextResponse
+
+    from .discovery import llms_txt as _t
+
+    return PlainTextResponse(_t())
+
+
+@app.get("/robots.txt", include_in_schema=False)
+async def robots_txt():
+    from fastapi.responses import PlainTextResponse
+
+    from .discovery import robots_txt as _t
+
+    return PlainTextResponse(_t())
+
+
+@app.get("/sitemap.xml", include_in_schema=False)
+async def sitemap_xml():
+    from fastapi.responses import Response
+
+    from .discovery import sitemap_xml as _t
+
+    return Response(_t(), media_type="application/xml")
+
+
+@app.get("/archive", include_in_schema=False)
+async def archive():
+    """Every snapshot ever published. The track record, made browsable."""
+    from fastapi.responses import HTMLResponse
+
+    from .web import render_archive
+
+    return HTMLResponse(render_archive(store.archive_index(), store.totals()))
 
 
 @app.get("/api", include_in_schema=False)

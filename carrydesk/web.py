@@ -83,7 +83,67 @@ def _rows(items: list[dict], side: str) -> str:
     )
 
 
-def render(snap: dict, delayed: bool, archived_days: int) -> str:
+def render_archive(index: list[dict], totals: dict) -> str:
+    """Every snapshot day ever published. The proof, made browsable.
+
+    A JSONL file in a repo is evidence; a page anyone can open is persuasion.
+    Same data either way.
+    """
+    rows = []
+    for d in index:
+        flag = (
+            ' <span class="dim">(outlier-dominated)</span>'
+            if d.get("outlier_dominated")
+            else ""
+        )
+        rows.append(
+            f'<tr><td class="coin">{escape(d["day"])}</td>'
+            f'<td class="n">{d["snapshots"]}</td>'
+            f'<td class="n">{d.get("universe_size") or "—"}</td>'
+            f'<td class="n">{_pct(d.get("carry_spread_annualized"))}</td>'
+            f'<td class="n">{_pct(d.get("carry_spread_annualized_median"))}{flag}</td></tr>'
+        )
+    body = "".join(rows) or '<tr><td colspan="5" class="dim">No snapshots yet.</td></tr>'
+    return f"""<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>carrydesk — published archive</title>
+<meta name="description" content="Every funding-carry snapshot carrydesk has published, timestamped and never edited.">
+<style>{CSS}</style></head><body><div class="wrap">
+<h1>Published archive</h1>
+<p class="sub"><strong>{totals.get("snapshots", 0)}</strong> snapshots across
+<strong>{totals.get("days", 0)}</strong> day(s), appended hourly and never edited.
+Each row shows that day's final reading.</p>
+
+<table><tr><th>day</th>
+<th style="text-align:right">snapshots</th>
+<th style="text-align:right">universe</th>
+<th style="text-align:right">spread (mean)</th>
+<th style="text-align:right">spread (median)</th></tr>
+{body}</table>
+
+<h2>Why this page exists</h2>
+<p>Anyone can publish a number today and claim it was right yesterday. The only
+thing that distinguishes a real signal from a backfitted one is a record written
+<em>in advance</em> and never touched afterwards. That is what this is: every
+snapshot, appended as it was computed, mirrored to a
+<a href="https://github.com/pelazas/carrydesk">public git repository</a> where the
+commit history is independently checkable.</p>
+
+<p>It is also why the median column sits next to the mean. When they diverge, one
+or two illiquid names are carrying the headline — and hiding that would make
+every other number here worth less.</p>
+
+<div class="foot">
+<p><a href="{C.PUBLIC_URL}/">← today's ranking</a> &middot;
+<a href="{C.PUBLIC_URL}/v1/method">method</a> &middot;
+<a href="https://github.com/pelazas/carrydesk">source</a></p>
+<p><strong>Informational only. Not investment advice.</strong></p>
+</div>
+</div></body></html>"""
+
+
+def render(snap: dict, delayed: bool, archived_days: int, json_ld: str = "") -> str:
     """Render the public page from a free-tier snapshot."""
     as_of = escape(str(snap.get("as_of", "unknown")))
     n = snap.get("universe_size", 0)
@@ -106,6 +166,8 @@ def render(snap: dict, delayed: bool, archived_days: int) -> str:
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>carrydesk — Hyperliquid funding carry</title>
 <meta name="description" content="Cross-sectional funding-carry rankings for Hyperliquid perpetuals, published daily and sold per call in USDC.">
+<link rel="alternate" type="text/plain" href="/llms.txt" title="LLM-readable summary">
+<script type="application/ld+json">{json_ld}</script>
 <style>{CSS}</style></head><body><div class="wrap">
 
 <h1>Hyperliquid funding carry</h1>
@@ -137,7 +199,7 @@ leverage &mdash; not a prediction. It can and does go negative.</p>
 <p>Three spread numbers, always. The mean is what an equal-weighted book earns; the
 trimmed and median readings tell you whether one illiquid name is carrying it.
 Published in advance, every hour, and never edited &mdash;
-<strong>{archived_days} day(s)</strong> archived so far.</p>
+<a href="{C.PUBLIC_URL}/archive"><strong>{archived_days} day(s)</strong> archived so far</a>.</p>
 
 <h2>API</h2>
 <pre><code>curl {C.PUBLIC_URL}/v1/free/carry     # free, delayed, top 5 each leg

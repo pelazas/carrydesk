@@ -83,6 +83,13 @@ Set it to turn the paywall on. See `.env.example`.
 
 ---
 
+## For agents and crawlers
+
+`/llms.txt` describes the whole service in plain text. `/openapi.json` is the
+full spec, `/archive` is every snapshot ever published, and the public page
+carries schema.org `Dataset` markup. Crawlers are explicitly welcome — the free
+tier exists to be read, indexed and quoted.
+
 ## Honest limitations
 
 - The carry spread **can and does go negative**. This is compensation for
@@ -100,6 +107,7 @@ Set it to turn the paywall on. See `.env.example`.
 
 | File | What |
 |---|---|
+| `BACKLOG.md` | Deliberately deferred work, with the reason for each |
 | `AGENTS.md` | Onboarding for an AI agent picking this up cold — gotchas, rules, what is unverified |
 | `STATUS.md` | Current state, what is blocked, what is next |
 | `DECISIONS.md` | Why each significant choice was made |

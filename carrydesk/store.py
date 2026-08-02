@@ -147,6 +147,52 @@ class SnapshotStore:
         out.sort(key=lambda r: r["as_of_ts"])
         return out
 
+    def archive_index(self, days: int = 90) -> list[dict]:
+        """One row per archived day: count, span, and the day's closing spread.
+
+        Powers the public /archive page. Reads only the last line of interest
+        per file rather than parsing everything, because this is rendered on
+        request and the archive grows forever.
+        """
+        out = []
+        for path in sorted(self.dir.glob("*.jsonl"), reverse=True)[:days]:
+            first = last = None
+            n = 0
+            for line in path.read_text().splitlines():
+                if not line.strip():
+                    continue
+                try:
+                    snap = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                n += 1
+                if first is None:
+                    first = snap
+                last = snap
+            if last is None:
+                continue
+            out.append(
+                {
+                    "day": path.stem,
+                    "snapshots": n,
+                    "first_at": first.get("as_of"),
+                    "last_at": last.get("as_of"),
+                    "universe_size": last.get("universe_size"),
+                    "carry_spread_annualized": last.get("carry_spread_annualized"),
+                    "carry_spread_annualized_median": last.get(
+                        "carry_spread_annualized_median"
+                    ),
+                    "outlier_dominated": last.get("outlier_dominated"),
+                }
+            )
+        return out
+
+    def totals(self) -> dict:
+        n = 0
+        for path in self.dir.glob("*.jsonl"):
+            n += sum(1 for line in path.read_text().splitlines() if line.strip())
+        return {"snapshots": n, "days": len(list(self.dir.glob("*.jsonl")))}
+
     def health(self) -> dict:
         stale = None
         if self.last_refresh_ts:
