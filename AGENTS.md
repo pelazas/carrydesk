@@ -171,7 +171,8 @@ Stated plainly so nobody builds on sand:
 - **No deployment exists.** Nothing has run longer than a few minutes.
 - **The archive is one day old at most**, so `/v1/carry/history/*` is nearly
   empty and the free tier falls back to live data until 24h of snapshots exist.
-- **`api.carrydesk.xyz` is a placeholder.** No domain is registered.
+- **No mainnet payment path exists.** Live at `https://carry.pelazas.com` on
+  Base **Sepolia** only; mainnet needs Coinbase CDP API keys.
 - **Backtest numbers are not republished here.** The Sharpe ~1.0 / ~15%/yr
   figures live in the trading repo's `RESULTS.md` and describe the *strategy*,
   not this API's uptime or data quality.

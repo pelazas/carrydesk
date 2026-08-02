@@ -79,6 +79,27 @@ the **free** tier as well as paid.
 
 ---
 
+## 2026-08-02 — iteration 5: **LIVE at https://carry.pelazas.com**
+
+Production Let's Encrypt certificate issued (valid to 2026-10-31). Verified
+externally from outside the box:
+
+| Endpoint | |
+|---|---|
+| `/health`, `/v1/free/carry`, `/v1/method`, `/docs` | 200 |
+| `/v1/carry/rankings`, `/v1/universe`, `/v1/carry/history/BTC` | 402 |
+| `http://` → `https://` | 308 redirect |
+
+The payment challenge correctly advertises
+`resource: https://carry.pelazas.com/v1/carry/rankings` — confirming uvicorn's
+`--proxy-headers` is doing its job. Without it x402 would have advertised
+`http://127.0.0.1:8000` to buyers.
+
+**Remaining to earn anything:** nobody has paid yet, and no distribution has
+happened. See "Next up".
+
+---
+
 ## 2026-08-02 — iteration 4: TLS, and three layers of firewall/config failure
 
 `carry.pelazas.com` is served by Caddy on the droplet. Getting there hit three

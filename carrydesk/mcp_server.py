@@ -27,7 +27,7 @@ from mcp.server import MCPServer
 
 log = logging.getLogger("carrydesk.mcp")
 
-API_BASE = os.getenv("CARRYDESK_API_BASE", "https://api.carrydesk.xyz").rstrip("/")
+API_BASE = os.getenv("CARRYDESK_API_BASE", "https://carry.pelazas.com").rstrip("/")
 PRIVATE_KEY = os.getenv("CARRYDESK_PRIVATE_KEY", "").strip()
 TIMEOUT = float(os.getenv("CARRYDESK_TIMEOUT", 30.0))
 

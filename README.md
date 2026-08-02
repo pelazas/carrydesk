@@ -31,7 +31,7 @@ the data. No account, no API key, no invoice.
 ## Quick start
 
 ```bash
-curl -s https://api.carrydesk.xyz/v1/free/carry | jq
+curl -s https://carry.pelazas.com/v1/free/carry | jq
 ```
 
 ```json
@@ -55,13 +55,18 @@ is exactly the kind of thing a single number would hide.
 ## MCP
 
 ```bash
-claude mcp add carrydesk -- python -m carrydesk.mcp_server
+git clone https://github.com/pelazas/carrydesk && cd carrydesk
+uv venv --python 3.12 && uv pip install -e .
+claude mcp add carrydesk -- "$PWD/.venv/bin/python" -m carrydesk.mcp_server
 ```
 
 Six tools: `carry_snapshot`, `carry_method`, `carry_health` (free) and
-`carry_rankings`, `carry_history`, `carry_universe` (paid). Set
-`CARRYDESK_PRIVATE_KEY` to let the agent pay automatically; without it the free
-tools work and paid tools return the price instead of failing.
+`carry_rankings`, `carry_history`, `carry_universe` (paid). It talks to
+`https://carry.pelazas.com` by default — override with `CARRYDESK_API_BASE`.
+
+Set `CARRYDESK_PRIVATE_KEY` to let the agent pay automatically. Without it the
+free tools work and paid tools return the price instead of failing, so a
+wallet-less install is still useful.
 
 ---
 

@@ -75,24 +75,35 @@ systemctl --user edit carrydesk.service
 
 ## 4. Expose it
 
-The unit binds `127.0.0.1:8000` only. Put a reverse proxy in front for TLS —
-x402 clients and MCP over HTTP both assume https in practice.
+The unit binds `127.0.0.1:8000` only. Caddy terminates TLS in front of it:
 
-```nginx
-server {
-    server_name api.carrydesk.xyz;
-    location / {
-        proxy_pass http://127.0.0.1:8000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
+```bash
+sudo bash ~/carrydesk/deploy/setup_tls.sh     # idempotent
 ```
 
-Then `certbot --nginx -d api.carrydesk.xyz`.
+Live at **https://carry.pelazas.com**. Caddy obtains and renews the Let's
+Encrypt certificate itself, so there is no renewal cron to expire.
 
-`PUBLIC_URL` in `.env` must match the external URL — it is what x402 puts in the
-`resource` field of the payment challenge.
+**Three things that bit us here — check them before blaming ACME:**
+
+1. **A DigitalOcean Cloud Firewall sits in front of the droplet** and blocks
+   80/443 by default. ufw allowing them is not enough. Symptom: connections
+   *time out* rather than being refused, while SSH still works. Fix in the DO
+   panel: Networking → Firewalls → Inbound Rules → add TCP 80 and 443.
+2. **Caddy cannot write to `/var/log/caddy`** — its systemd unit is sandboxed.
+   A `log` block makes it exit before it ever requests a certificate. Leave
+   logging to journald: `sudo journalctl -u caddy`.
+3. **Let's Encrypt allows 5 failed validations per hostname per hour.** Burning
+   them (e.g. while the firewall is shut) locks you out for the rest of the hour
+   and can leave Caddy latched onto the untrusted *staging* CA. Re-pin the
+   production CA without sudo through Caddy's admin API:
+   `POST http://127.0.0.1:2019/load` with an explicit
+   `apps.tls.automation.policies[].issuers[].ca`.
+
+`PUBLIC_URL` in `.env` must match the external URL, and uvicorn runs with
+`--proxy-headers` — together these make x402 advertise
+`https://carry.pelazas.com/...` in the payment challenge rather than
+`http://127.0.0.1:8000/...`.
 
 ---
 
