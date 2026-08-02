@@ -35,6 +35,15 @@ font:15px/1.6 ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-ser
 -webkit-font-smoothing:antialiased}
 .wrap{max-width:820px;margin:0 auto;padding:48px 20px 80px}
 h1{font-size:26px;letter-spacing:-.02em;margin:0 0 6px;font-weight:650}
+/* The hero carries the whole page. Big, plain, no gradient, no motion --
+   the product is credibility, and anything that looks like a crypto landing
+   page makes the honest median number read as marketing too. */
+h1.hero{font-size:40px;line-height:1.12;letter-spacing:-.03em;font-weight:680;
+margin:0 0 18px;max-width:16em}
+@media(max-width:620px){h1.hero{font-size:30px}}
+.lede{font-size:18px;line-height:1.55;margin:0 0 14px;max-width:34em}
+.lede .big{font-size:22px;font-weight:660;letter-spacing:-.02em;
+font-variant-numeric:tabular-nums;white-space:nowrap}
 .sub{color:var(--dim);margin:0 0 36px;font-size:14px}
 h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);
 margin:40px 0 14px;font-weight:600}
@@ -149,68 +158,128 @@ every other number here worth less.</p>
 </div></body></html>"""
 
 
+def _honesty_block(snap: dict) -> str:
+    """The section that undercuts our own headline.
+
+    Written from the live snapshot rather than boilerplate, because naming the
+    actual coin paying 199% is what makes the point land — and because when
+    there is no outlier the honest thing is to say so, not to keep the warning
+    up for effect.
+    """
+    mean = snap.get("carry_spread_annualized") or 0.0
+    trimmed = snap.get("carry_spread_annualized_trimmed") or 0.0
+    median = snap.get("carry_spread_annualized_median") or 0.0
+    # Extreme payers on the short leg: high funding, and the reason it is high
+    # is almost always that nobody can trade size in them.
+    big = [r for r in snap.get("shorts", []) if (r.get("mean_funding_annualized") or 0) > 0.5]
+    big.sort(key=lambda r: -(r["mean_funding_annualized"]))
+
+    if not big or abs(mean - median) < 0.05:
+        return f"""<h2>About that number</h2>
+<p>Today the three readings agree closely &mdash; mean {_pct(mean)}, trimmed
+{_pct(trimmed)}, median {_pct(median)}. No single coin is carrying the headline,
+which is the calmer state and not the usual one.</p>
+<p>We publish all three on every response regardless, plus a flag when they
+diverge. The day they disagree is the day the headline alone would mislead you.</p>"""
+
+    clauses = [
+        f'<strong>{escape(r["coin"])}</strong> is paying {_pct(r["mean_funding_annualized"])} '
+        f'on {_vol(r["day_notional_volume"])} a day'
+        for r in big[:2]
+    ]
+    names = " and ".join(clauses) if len(clauses) > 1 else clauses[0]
+    return f"""<h2>Our own headline number is misleading. Here is why.</h2>
+<p>That <strong>{_pct(mean)}</strong> is real arithmetic &mdash; and it is mostly one or two coins.
+Right now {names}.</p>
+
+<p>At that size you cannot put real money in without moving the price against
+yourself, and the funding can flip while you are trying. Strip the extremes out
+and the number is <strong>{_pct(trimmed)}</strong>. Take the middle coin instead of the
+average and it is <strong>{_pct(median)}</strong>.</p>
+
+<p>Most data vendors would print {_pct(mean)} and stop. We print all three on every
+response, plus a flag when the gap gets this wide &mdash; because the first time you
+size into a {_pct(big[0]["mean_funding_annualized"])} number and get hurt, nothing else
+we publish would be worth reading.</p>"""
+
+
 def render(snap: dict, delayed: bool, archived_days: int, json_ld: str = "",
            series: list[dict] | None = None) -> str:
-    """Render the public page from a free-tier snapshot."""
+    """Render the public page from a free-tier snapshot.
+
+    Leads with the arresting true fact, not the method. "Cross-sectional ranking
+    by trailing 14-day mean funding" is accurate and means nothing to anyone who
+    does not already know what it means — which is everyone we need to reach.
+    """
     chartblock = render_chart(series or [])
     as_of = escape(str(snap.get("as_of", "unknown")))
     n = snap.get("universe_size", 0)
     lookback = snap.get("method", {}).get("lookback_hours", 336) // 24
-
-    outlier = ""
-    if snap.get("outlier_dominated"):
-        outlier = (
-            '<div class="note"><strong>Outlier-dominated today.</strong> One or two '
-            "illiquid names carry most of the headline spread. The median is the "
-            "number to trust.</div>"
-        )
+    median = snap.get("carry_spread_annualized_median") or 0.0
 
     freshness = (
-        f"Delayed {C.FREE_TIER_DELAY_HOURS}h." if delayed else "Live (no delayed snapshot yet)."
+        f"delayed {C.FREE_TIER_DELAY_HOURS}h" if delayed else "live"
     )
+    direction = "paying" if median >= 0 else "charging"
 
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>carrydesk — Hyperliquid funding carry</title>
-<meta name="description" content="Cross-sectional funding-carry rankings for Hyperliquid perpetuals, published daily and sold per call in USDC.">
+<title>carrydesk — who is paying whom on Hyperliquid perps</title>
+<meta name="description" content="On perpetual futures the crowded side pays the uncrowded side every hour. carrydesk ranks who is paying whom across Hyperliquid, updated hourly and published before the fact.">
 <link rel="alternate" type="text/plain" href="/llms.txt" title="LLM-readable summary">
 <script type="application/ld+json">{json_ld}</script>
 <style>{CSS}</style></head><body><div class="wrap">
 
-<h1>Hyperliquid funding carry</h1>
-<p class="sub">Cross-sectional ranking of {n} liquid perps by trailing {lookback}-day mean
-funding &middot; {as_of} &middot; {freshness}</p>
+<h1 class="hero">Somebody is paying you<br>to take the other side.</h1>
+<p class="lede">On perpetual futures, whichever crowd is more crowded pays the other one
+&mdash; <strong>every hour, automatically</strong>. Right now the market is {direction}
+<span class="big">{_pct(median)}</span> a year to hold a position that does not care
+where Bitcoin goes.</p>
+<p class="sub">{n} liquid Hyperliquid perps &middot; {lookback}-day trailing funding &middot;
+{as_of} &middot; {freshness}</p>
 
 <div class="head">
-  <div class="stat"><div class="k">spread (mean)</div>
+  <div class="stat"><div class="k">an equal-weight book earns</div>
     <div class="v">{_pct(snap.get("carry_spread_annualized"))}</div></div>
-  <div class="stat"><div class="k">trimmed</div>
+  <div class="stat"><div class="k">ignoring the extremes</div>
     <div class="v">{_pct(snap.get("carry_spread_annualized_trimmed"))}</div></div>
-  <div class="stat"><div class="k">median</div>
-    <div class="v">{_pct(snap.get("carry_spread_annualized_median"))}</div></div>
+  <div class="stat"><div class="k">the typical coin</div>
+    <div class="v">{_pct(median)}</div></div>
 </div>
-{outlier}
+
+<h2>Wait — why would anyone pay me?</h2>
+<p>A perpetual future never expires, so something has to keep its price tethered to the
+real one. That something is the <strong>funding rate</strong>: every hour, one side pays
+the other.</p>
+<p>When everyone piles into longs, longs pay shorts. When everyone is short, shorts pay
+longs. It is a <strong>crowding tax</strong>, and it lands in your account whether or not
+the price moves.</p>
+<p>So: go long the coins nobody wants to hold, short the coins everybody is crowding into,
+in equal size. You are flat on direction &mdash; you do not need to be right about anything
+&mdash; and you collect the difference. That is the carry. Not a prediction; rent for being
+willing to take the unpopular side.</p>
+<p class="dim">It is a risk premium, not free money. It can and does go negative, and it is
+gross of fees, slippage and borrow.</p>
+
+<div class="cols">
+{_rows(snap.get("longs", []), "Nobody wants these &mdash; paid to hold")}
+{_rows(snap.get("shorts", []), "Everybody piles in &mdash; paid to short")}
+</div>
+
+{_honesty_block(snap)}
 
 <h2>Carry spread over time</h2>
 {chartblock}
 
-<div class="cols">
-{_rows(snap.get("longs", []), "Long leg &middot; paid to hold")}
-{_rows(snap.get("shorts", []), "Short leg &middot; paid to short")}
-</div>
-
-<h2>What this is</h2>
-<p>Perps charge funding hourly between longs and shorts. Rank the liquid universe by
-trailing mean funding, go long the most negative and short the most positive,
-dollar-neutral, and you collect the spread between the legs. It is a
-<strong>structural risk premium</strong> &mdash; compensation for absorbing crowded
-leverage &mdash; not a prediction. It can and does go negative.</p>
-
-<p>Three spread numbers, always. The mean is what an equal-weighted book earns; the
-trimmed and median readings tell you whether one illiquid name is carrying it.
-Published in advance, every hour, and never edited &mdash;
-<a href="{C.PUBLIC_URL}/archive"><strong>{archived_days} day(s)</strong> archived so far</a>.</p>
+<h2>Why trust the numbers</h2>
+<p>Anyone can publish a chart today and claim it was right yesterday.</p>
+<p>Every snapshot here was written <em>before</em> the hour it describes, appended to a file
+that is never edited, and mirrored to a
+<a href="https://github.com/pelazas/carrydesk">public git repository</a> where the commit
+timestamps are not ours to forge. The chart above is that file, drawn.
+<a href="{C.PUBLIC_URL}/archive">{archived_days} day(s) archived so far</a> &mdash; it gets
+more convincing every hour, and there is no way to speed that up.</p>
 
 <h2>API</h2>
 <pre><code>curl {C.PUBLIC_URL}/v1/free/carry     # free, delayed, top 5 each leg
