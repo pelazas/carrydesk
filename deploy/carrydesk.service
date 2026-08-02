@@ -1,0 +1,23 @@
+[Unit]
+Description=carrydesk API (Hyperliquid funding carry)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/carrydesk
+EnvironmentFile=%h/carrydesk/.env
+ExecStart=%h/carrydesk/.venv/bin/python -m uvicorn carrydesk.api:app \
+    --host 127.0.0.1 --port 8000 --workers 1
+Restart=always
+RestartSec=10
+
+# One worker on purpose: the snapshot store is in-process memory and the
+# background refresher must not run N times against Hyperliquid. Scale with a
+# reverse proxy and caching, not with workers.
+
+StandardOutput=append:%h/carrydesk/carrydesk.log
+StandardError=append:%h/carrydesk/carrydesk.log
+
+[Install]
+WantedBy=default.target

@@ -17,6 +17,14 @@ this file plus `AGENTS.md` is the whole picture.
 - x402 paywall verified on Base Sepolia — 402 challenges carry the correct USDC
   amounts ($0.05 / $0.02 / $0.01) against the real USDC asset address.
 - MCP server (`mcp_server.py`) verified end-to-end over stdio: 6 tools, live data.
+- Ops probe (`scripts/ops_check.py`) — exit 0/1/2 verified against healthy, dead
+  and stale targets. Also probes that a paid route still answers 402, because an
+  open paywall is a revenue leak no uptime check would catch.
+- Daily proof-post generator (`scripts/daily_post.py`) — markdown and X formats,
+  behind a gate that verified-rejects empty legs, tiny universes, insane spreads
+  and stale snapshots. Renders only; publishing stays a deliberate step.
+- Deploy artifacts (`deploy/`) — systemd `--user` unit, `ctl.sh`, and DEPLOY.md
+  mirroring the trading bot's existing pattern on `the-server`.
 
 **Bugs found and fixed this iteration**
 
