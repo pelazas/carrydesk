@@ -8,6 +8,7 @@ dependencies = [
     "httpx>=0.28.1",
     "x402[fastapi,evm,mcp,clients]>=2.17.0",
     "mcp>=1.0.0",
+    "cdp-sdk>=1.47.0",   # only needed for Base mainnet (CDP facilitator auth)
 ]
 
 [project.optional-dependencies]

@@ -181,3 +181,19 @@ Stated plainly so nobody builds on sand:
 - **Uptime is unproven.** The service has not run long enough to have a record.
 - **Strategy backtest numbers are not republished here.** They describe the
   strategy, not this API's data quality or availability.
+
+---
+
+## 9. Going to Base mainnet
+
+One env var. `X402_NETWORK=eip155:8453` switches the facilitator to CDP
+automatically; `CDP_API_KEY_ID` / `CDP_API_KEY_SECRET` come from
+<https://cdp.coinbase.com> → project → API keys.
+
+The service **refuses to start** on mainnet without those keys rather than
+serving payment challenges it cannot settle. Verified: testnet path unchanged
+and unauthenticated; mainnet without keys raises at startup; mainnet with keys
+mints a signed EdDSA JWT per facilitator endpoint (verify / settle / supported /
+bazaar), since the JWTs are short-lived and cannot be cached.
+
+Not yet verified: an actual mainnet settlement. Nobody has run one.

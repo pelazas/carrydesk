@@ -48,9 +48,22 @@ FREE_TIER_DELAY_HOURS = int(os.getenv("FREE_TIER_DELAY_HOURS", 24))
 BASE_SEPOLIA = "eip155:84532"
 BASE_MAINNET = "eip155:8453"
 X402_NETWORK = os.getenv("X402_NETWORK", BASE_SEPOLIA)
+
+# Coinbase Developer Platform credentials, required only for Base mainnet.
+# Create at https://cdp.coinbase.com -> project -> API keys.
+CDP_API_KEY_ID = os.getenv("CDP_API_KEY_ID", "")
+CDP_API_KEY_SECRET = os.getenv("CDP_API_KEY_SECRET", "")
+CDP_FACILITATOR_URL = "https://api.cdp.coinbase.com/platform/v2/x402"
 X402_PAY_TO = os.getenv("X402_PAY_TO", "")  # receiving wallet address
-X402_FACILITATOR_URL = os.getenv("X402_FACILITATOR_URL", "https://x402.org/facilitator")
+# Default to whichever facilitator matches the network, so switching to mainnet
+# is one env var rather than two that can silently disagree. Explicit
+# X402_FACILITATOR_URL still wins.
+_default_facilitator = (
+    CDP_FACILITATOR_URL if X402_NETWORK == BASE_MAINNET else "https://x402.org/facilitator"
+)
+X402_FACILITATOR_URL = os.getenv("X402_FACILITATOR_URL", _default_facilitator)
 PAYMENTS_ENABLED = bool(X402_PAY_TO)
+USING_CDP = X402_FACILITATOR_URL.startswith(CDP_FACILITATOR_URL)
 
 PRICE_RANKINGS = os.getenv("PRICE_RANKINGS", "$0.05")
 PRICE_HISTORY = os.getenv("PRICE_HISTORY", "$0.02")

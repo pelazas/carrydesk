@@ -67,6 +67,55 @@ app = FastAPI(
 
 # --- payments ---------------------------------------------------------------
 
+
+def _cdp_auth():
+    """Auth provider for Coinbase's facilitator. None for the public one.
+
+    Base **mainnet** settles only through CDP's facilitator, which requires a
+    signed JWT per request. The public x402.org facilitator is testnet-only and
+    needs no auth, so this returns None there.
+
+    Fails loudly rather than silently falling back: a mainnet deployment that
+    quietly can't settle would take payment challenges nobody can satisfy.
+    """
+    if not C.USING_CDP:
+        return None
+    if not (C.CDP_API_KEY_ID and C.CDP_API_KEY_SECRET):
+        raise RuntimeError(
+            "CDP facilitator selected but CDP_API_KEY_ID / CDP_API_KEY_SECRET are "
+            "unset. Create them at https://cdp.coinbase.com (project -> API keys)."
+        )
+
+    from cdp.auth.utils.http import GetAuthHeadersOptions, get_auth_headers
+    from x402.http.facilitator_client import CreateHeadersAuthProvider
+
+    host = "api.cdp.coinbase.com"
+    base = "/platform/v2/x402"
+
+    def headers_for(path: str) -> dict[str, str]:
+        return get_auth_headers(
+            GetAuthHeadersOptions(
+                api_key_id=C.CDP_API_KEY_ID,
+                api_key_secret=C.CDP_API_KEY_SECRET,
+                request_method="POST",
+                request_host=host,
+                request_path=f"{base}{path}",
+            )
+        )
+
+    def create_headers() -> dict[str, dict[str, str]]:
+        # Signed per call: these JWTs are short-lived, so they cannot be cached.
+        return {
+            "verify": headers_for("/verify"),
+            "settle": headers_for("/settle"),
+            "supported": headers_for("/supported"),
+            "bazaar": headers_for("/discovery/resources"),
+        }
+
+    log.info("using CDP facilitator with API key %s…", C.CDP_API_KEY_ID[:8])
+    return CreateHeadersAuthProvider(create_headers)
+
+
 def _install_payments(app: FastAPI) -> bool:
     """Attach the x402 paywall. No-op when no receiving wallet is configured."""
     if not C.PAYMENTS_ENABLED:
@@ -122,7 +171,9 @@ def _install_payments(app: FastAPI) -> bool:
     from x402.mechanisms.evm.exact import register_exact_evm_server
     from x402.server import x402ResourceServer
 
-    fac = HTTPFacilitatorClient(FacilitatorConfig(url=C.X402_FACILITATOR_URL))
+    fac = HTTPFacilitatorClient(
+        FacilitatorConfig(url=C.X402_FACILITATOR_URL, auth_provider=_cdp_auth())
+    )
     server = x402ResourceServer(fac)
     # The "exact" EVM scheme handler is NOT registered by default. Without this
     # every protected route 500s at first request with
