@@ -1,5 +1,7 @@
 # carrydesk
 
+<!-- mcp-name: io.github.pelazas/carrydesk -->
+
 **Cross-sectional funding-carry rankings for Hyperliquid perpetuals, sold per call in USDC.**
 
 Every hour, rank the liquid Hyperliquid perp universe by trailing 14-day mean

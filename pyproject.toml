@@ -1,6 +1,6 @@
 [project]
 name = "carrydesk"
-version = "0.1.0"
+version = "0.1.1"
 description = "Cross-sectional funding-carry rankings for Hyperliquid perpetuals, sold per call in USDC."
 requires-python = ">=3.12"
 readme = "README.md"

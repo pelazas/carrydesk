@@ -1,0 +1,38 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.pelazas/carrydesk",
+  "description": "Funding-carry rankings for Hyperliquid perps, metered per call in USDC via x402.",
+  "websiteUrl": "https://carry.pelazas.com",
+  "repository": {
+    "url": "https://github.com/pelazas/carrydesk",
+    "source": "github"
+  },
+  "version": "0.1.1",
+  "packages": [
+    {
+      "registryType": "pypi",
+      "identifier": "carrydesk",
+      "version": "0.1.1",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "CARRYDESK_PRIVATE_KEY",
+          "description": "Optional. Private key of a small hot wallet holding USDC on Base, used to pay for the metered tools automatically. Without it the three free tools work normally and the paid tools return their price instead of failing.",
+          "isRequired": false,
+          "isSecret": true,
+          "format": "string"
+        },
+        {
+          "name": "CARRYDESK_API_BASE",
+          "description": "Optional. Override the API base URL. Defaults to https://carry.pelazas.com.",
+          "isRequired": false,
+          "isSecret": false,
+          "format": "string",
+          "default": "https://carry.pelazas.com"
+        }
+      ]
+    }
+  ]
+}
