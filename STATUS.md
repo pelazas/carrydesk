@@ -32,7 +32,7 @@ recheck later.
 
 ## Where it stands — 2026-08-02
 
-**Live at https://carry.pelazas.com, taking real payments on Base Sepolia.**
+**Live at https://carry.pelazas.com, settling real USDC on Base mainnet.**
 
 | | |
 |---|---|
