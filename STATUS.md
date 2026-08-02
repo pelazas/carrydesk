@@ -79,6 +79,38 @@ the **free** tier as well as paid.
 
 ---
 
+## 2026-08-02 — iteration 4: TLS, and three layers of firewall/config failure
+
+`carry.pelazas.com` is served by Caddy on the droplet. Getting there hit three
+separate failures, each of which looked like the previous one:
+
+1. **Caddy exited 9ms after start**: `open /var/log/caddy/carrydesk.log:
+   permission denied`. The Debian caddy unit is sandboxed and cannot write
+   `/var/log/caddy` even when that dir is chowned to the caddy user. It never
+   reached the point of requesting a certificate, so the symptom read as an
+   ACME problem. Fix: no file log — Caddy logs to journald by default.
+2. **DigitalOcean Cloud Firewall** was dropping inbound 80/443 at the network
+   edge, before the droplet. ufw allowing them was irrelevant. Signature:
+   connections *time out* rather than being refused, while SSH works. Fixed by
+   adding inbound rules in the DO panel.
+3. **Let's Encrypt rate limit**: the 5 failed validations from (2) tripped LE's
+   cap of 5 failed authorizations per hostname per hour, and Caddy had also
+   fallen back to the **staging** CA (whose certs are not publicly trusted).
+   Pinned the automation policy to the production CA via Caddy's admin API
+   (`POST 127.0.0.1:2019/load`, no sudo needed). Waiting out the window.
+
+**Diagnostic note:** macOS has no `timeout` command, so `timeout N bash -c
+'... /dev/tcp/...'` port probes silently report everything as filtered. Use
+`curl --max-time` instead. This produced one wrong conclusion before it was
+caught.
+
+**Sudo on this box:** `pelazas` is in the `sudo` group but there is no
+passwordless sudo, no docker, and `net.ipv4.ip_unprivileged_port_start=1024`.
+Anything touching :80/:443 or system units needs the owner to run it. Caddy's
+admin API on `127.0.0.1:2019` is the sudo-free escape hatch for config changes.
+
+---
+
 ## 2026-08-02 — iteration 3: domain + paywall live
 
 - `carry.pelazas.com` → `the-server`, DNS-only, propagated.
