@@ -12,6 +12,11 @@ ExecStart=%h/carrydesk/.venv/bin/python -m uvicorn carrydesk.api:app \
 Restart=always
 RestartSec=10
 
+# This co-exists with a real-money trading bot on the same box. A memory ceiling
+# is not optional: carrydesk must never be able to starve other-services.service.
+MemoryMax=512M
+CPUWeight=50
+
 # One worker on purpose: the snapshot store is in-process memory and the
 # background refresher must not run N times against Hyperliquid. Scale with a
 # reverse proxy and caching, not with workers.
