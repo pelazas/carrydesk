@@ -117,3 +117,60 @@ def test_caveats_are_present_and_not_empty(method_doc):
     joined = " ".join(doc["caveats"]).lower()
     assert "not investment advice" in joined
     assert "negative" in joined
+
+
+# --- the OpenAPI spec is a machine contract ---------------------------------
+#
+# It is linked from llms.txt and the sitemap, and an agent will generate a
+# client straight from it. It documented no 402 at all, so that client would
+# expect 200, receive 402, and fail with no idea why -- which defeats the whole
+# agent-discovery story.
+
+
+PAID_PATHS = {
+    "/v1/carry/rankings": C.PRICE_RANKINGS,
+    "/v1/carry/history/{coin}": C.PRICE_HISTORY,
+    "/v1/universe": C.PRICE_UNIVERSE,
+}
+
+
+@pytest.fixture(scope="module")
+def openapi() -> dict:
+    from carrydesk.api import app
+
+    return app.openapi()
+
+
+@pytest.mark.parametrize("path", sorted(PAID_PATHS))
+def test_paid_routes_document_the_402(path, openapi):
+    op = openapi["paths"][path]["get"]
+    assert "402" in op["responses"], f"{path} is metered but its spec never mentions 402"
+
+
+@pytest.mark.parametrize("path", sorted(PAID_PATHS))
+def test_paid_routes_document_where_the_price_actually_lives(path, openapi):
+    """x402 v2 returns an empty body; the requirements are in a header."""
+    r402 = openapi["paths"][path]["get"]["responses"]["402"]
+    assert "payment-required" in (r402.get("headers") or {}), (
+        f"{path}: a client told only 'payment required' cannot find the price"
+    )
+    assert "x402" in r402["description"].lower()
+
+
+@pytest.mark.parametrize("path,price", sorted(PAID_PATHS.items()))
+def test_the_spec_quotes_the_price_actually_charged(path, price, openapi):
+    op = openapi["paths"][path]["get"]
+    blob = (op.get("summary") or "") + op["responses"]["402"]["description"]
+    assert price in blob, f"{path} spec does not state the real price {price}"
+
+
+@pytest.mark.parametrize("path", sorted(PAID_PATHS))
+def test_paid_routes_point_at_the_free_alternative(path, openapi):
+    """Anyone hitting a paywall should be told what they can have for nothing."""
+    assert "/v1/free/carry" in openapi["paths"][path]["get"]["responses"]["402"]["description"]
+
+
+def test_free_routes_do_not_claim_to_be_paid(openapi):
+    for path in ("/health", "/v1/free/carry", "/v1/method"):
+        op = openapi["paths"][path]["get"]
+        assert "402" not in op["responses"], f"{path} is free but advertises a 402"

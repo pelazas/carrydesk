@@ -255,6 +255,43 @@ def _assert_routes_match(routes: dict) -> None:
 PAYWALL_ACTIVE = _install_payments(app)
 
 
+# The OpenAPI spec is a machine contract -- it is linked from llms.txt and the
+# sitemap, and an agent will generate a client straight from it. Without this,
+# that client expects 200, receives 402, and fails with no idea why. Documenting
+# the paywall in the spec is not decoration; it is the difference between the
+# agent-discovery story working and not.
+def paid_responses(price: str) -> dict:
+    return {
+        402: {
+            "description": (
+                f"Payment required ({price} USDC). This route is metered with x402. "
+                "The response body is empty by design; the payment requirements are "
+                "base64-encoded in the `payment-required` response header "
+                "(scheme, network, asset, amount, payTo). Pay with USDC on Base, "
+                "retry the same request with an `X-PAYMENT` header, and the data is "
+                "returned. No account or API key exists. Buyers need no ETH: "
+                "settlement uses EIP-3009, so the facilitator sponsors gas. "
+                "See https://x402.org, or use GET /v1/free/carry for a free "
+                "delayed view that needs no wallet."
+            ),
+            "headers": {
+                "payment-required": {
+                    "description": "Base64-encoded x402 payment requirements.",
+                    "schema": {"type": "string"},
+                }
+            },
+            "content": {"application/json": {"schema": {"type": "object"}}},
+        },
+        503: {
+            "description": (
+                "No fresh snapshot available upstream. The previous good snapshot "
+                "keeps serving whenever one exists, so this means the service has "
+                "not yet completed a successful refresh. Retry shortly."
+            )
+        },
+    }
+
+
 def _require_snapshot() -> dict:
     if store.current is None:
         raise HTTPException(
@@ -364,7 +401,9 @@ async def method():
 # --- paid -------------------------------------------------------------------
 
 
-@app.get("/v1/carry/rankings", tags=["paid"])
+@app.get("/v1/carry/rankings", tags=["paid"],
+         summary=f"Full live carry ranking (PAID, {C.PRICE_RANKINGS} USDC via x402)",
+         responses=paid_responses(C.PRICE_RANKINGS))
 async def carry_rankings(
     k: int = Query(default=C.K_PER_LEG, ge=1, le=20, description="coins per leg"),
     min_volume: float = Query(default=0, ge=0, description="extra volume filter"),
@@ -403,7 +442,10 @@ async def carry_rankings(
     return snap
 
 
-@app.get("/v1/carry/history/{coin}", tags=["paid"])
+@app.get("/v1/carry/history/{coin}", tags=["paid"],
+         summary=f"Archived rank + funding for one coin (PAID, {C.PRICE_HISTORY} USDC via x402)",
+         responses={**paid_responses(C.PRICE_HISTORY),
+                    404: {"description": "No archived snapshot contains this coin yet."}})
 async def carry_history(
     coin: str,
     days: int = Query(default=30, ge=1, le=365),
@@ -422,7 +464,9 @@ async def carry_history(
     return {"coin": coin.upper(), "days": days, "n": len(rows), "history": rows}
 
 
-@app.get("/v1/universe", tags=["paid"])
+@app.get("/v1/universe", tags=["paid"],
+         summary=f"Liquid perp universe by volume (PAID, {C.PRICE_UNIVERSE} USDC via x402)",
+         responses=paid_responses(C.PRICE_UNIVERSE))
 async def universe():
     """Liquid perp universe with volume, open interest and current funding."""
     snap = _require_snapshot()
