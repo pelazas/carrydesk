@@ -44,7 +44,7 @@ computation, the archive, and the reliability.
 | MCP server | ✅ 6 tools, verified against production, paid path works |
 | Ops monitor | ✅ every 10 min → Telegram, verified with a real alert |
 | Snapshot archive | ✅ append-only, auto-committed daily |
-| Mainnet payments | ❌ needs Coinbase CDP API keys |
+| Mainnet payments | ⚙️ wired — needs only `CDP_API_KEY_ID`/`SECRET` (see §9) |
 | Distribution | ❌ **nothing published anywhere** |
 
 `STATUS.md` has the running log; `DECISIONS.md` has the reasoning.
