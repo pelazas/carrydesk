@@ -5,6 +5,36 @@ this file plus `AGENTS.md` is the whole picture.
 
 ---
 
+## 2026-08-02 — iteration 2: DEPLOYED to the-server
+
+**Live.** `carrydesk.service` runs as `systemd --user` on `the-server` alongside
+`other-services.service` and `hermes-gateway.service`. Linger + enabled, so it
+survives reboot. 53 MB against a 512 MB cap. The archive is accumulating —
+**the track record started today.**
+
+Owner decisions taken this iteration: deploy to the-server, testnet payments first,
+and yes to publishing the ranking the bot trades.
+
+| | |
+|---|---|
+| Bind | `127.0.0.1:8000` only — **not publicly reachable yet** (no domain, no TLS) |
+| Paywall | **OFF** (`X402_PAY_TO` blank). Service runs fully open. |
+| Monitoring | ops probe every 10min → Telegram; verified with a real alert + recovery |
+| Archive | committed and pushed to this repo daily at 03:00 UTC by the box itself |
+| Daily post | rendered to `posts/YYYY-MM-DD.md` at 08:05 UTC; **not** auto-published |
+
+**Bug found and fixed: alerting was silently dead.** The first cron wrapper
+called `hermes "msg" --deliver telegram:<id>`, which is not valid hermes CLI
+syntax — hermes needs a subcommand, so every alert was a no-op, and the
+`>/dev/null` wrapper hid it. Now posts directly to the Telegram Bot API with
+curl and appends any delivery failure to `alert.log`. A silently-broken alerter
+is strictly worse than none, because it looks exactly like health.
+
+**Deploy key** `the-server (write: archive commits)` added to this repo with write
+access so the box can push its own archive.
+
+---
+
 ## 2026-08-02 — iteration 1: core built and verified locally
 
 **Built and verified**
@@ -53,24 +83,25 @@ the **free** tier as well as paid.
 
 | # | Need | Why | Unblocks |
 |---|---|---|---|
-| 1 | A receiving wallet address (Base) | `X402_PAY_TO`; without it the API runs fully open | any revenue |
-| 2 | Decision: testnet first, or straight to mainnet | mainnet needs Coinbase CDP API keys; the public facilitator is testnet-only | real USDC settlement |
-| 3 | Where to deploy | existing `the-server` droplet vs. a new box | public URL, uptime, archive accumulation |
-| 4 | A domain | `api.carrydesk.xyz` is a placeholder in `mcp_server.py` | MCP install instructions, listings |
-| 5 | OK to publish the ranking the live bot trades | capacity/crowding call — at ~$300 book size it is almost certainly fine, but it is the owner's call | going public at all |
+| 1 | **A domain** pointed at `the-server` | the service is localhost-bound; nginx + certbot are not installed | anyone outside the box using it at all |
+| 2 | **A Base receiving address** for `X402_PAY_TO` | paywall is off; any EVM address works for testnet | metered revenue |
+
+Resolved: deploy target (the-server), payments (testnet first), publishing the
+ranking (yes).
 
 ---
 
 ## Next up (in order)
 
-1. Deploy somewhere with a stable URL so the archive starts accumulating. The
-   track record cannot be backfilled — every day not deployed is a day of proof
-   permanently lost. **This is the single highest-value action.**
-2. Ops monitor: page on stale data, failed refresh, or a snapshot that trips the
-   validation gate.
-3. Content agent: one automated daily post of the free snapshot, behind the same
-   validation gate, human-approved for the first ~2 weeks.
-4. Mainnet payments once 1–4 above are answered.
+1. **Domain + nginx + TLS.** The archive is accumulating, but nothing is
+   reachable from outside. This is the only thing standing between "running"
+   and "usable".
+2. Turn the paywall on with a real address, on Base Sepolia, and settle one real
+   testnet payment end to end.
+3. Publish the free snapshot daily. `posts/*.md` renders already; publishing is
+   still a deliberate human step by design for the first couple of weeks.
+4. Mainnet: needs Coinbase CDP API keys, since the public facilitator is
+   testnet-only.
 5. Passive listings (x402 bazaar, RapidAPI) — cheap, one-time, low volume.
 
 ---
