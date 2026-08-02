@@ -79,15 +79,24 @@ the **free** tier as well as paid.
 
 ---
 
-## Blocked on the owner
+## 2026-08-02 — iteration 3: domain + paywall live
 
-| # | Need | Why | Unblocks |
-|---|---|---|---|
-| 1 | **A domain** pointed at `the-server` | the service is localhost-bound; nginx + certbot are not installed | anyone outside the box using it at all |
-| 2 | **A Base receiving address** for `X402_PAY_TO` | paywall is off; any EVM address works for testnet | metered revenue |
+- `carry.pelazas.com` → `the-server`, DNS-only, propagated.
+- **Paywall ON.** `X402_PAY_TO=0x56d487318fB8570DB7C928dbD038c22aB53AAB91`,
+  network `eip155:84532` (Base Sepolia). Verified: free routes 200, all three
+  paid routes 402, and the decoded challenge carries the correct address and
+  price. Address checksum validated (EIP-55) before use.
+- `scripts/test_payment.py` written: generates a throwaway buyer, detects the
+  challenge, pays, and reports the settlement tx. Step 1 verified against a real
+  paywalled server; full settlement still needs testnet USDC in a buyer wallet.
+- `deploy/setup_tls.sh` written (Caddy, automatic Let's Encrypt).
+
+**Blocked:** the box has **no passwordless sudo, no docker, and
+`net.ipv4.ip_unprivileged_port_start=1024`**, so nothing I can do binds :443.
+TLS needs the owner to run `sudo bash ~/carrydesk/deploy/setup_tls.sh` once.
 
 Resolved: deploy target (the-server), payments (testnet first), publishing the
-ranking (yes).
+ranking (yes), domain (carry.pelazas.com), receiving address.
 
 ---
 
