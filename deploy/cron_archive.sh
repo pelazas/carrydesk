@@ -12,7 +12,14 @@ set -uo pipefail
 HOME_DIR="${CARRYDESK_HOME:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 cd "$HOME_DIR" || exit 1
 
-export GIT_SSH_COMMAND="ssh -i $HOME/.ssh/id_carrydesk -o IdentitiesOnly=yes"
+# Deploy key path comes from .env so rotating the key never means editing code.
+# Unset: fall back to whatever ssh/git is already configured.
+if [ -f "$HOME_DIR/.env" ]; then
+  set -a; . "$HOME_DIR/.env"; set +a
+fi
+if [ -n "${CARRYDESK_DEPLOY_KEY:-}" ]; then
+  export GIT_SSH_COMMAND="ssh -i ${CARRYDESK_DEPLOY_KEY} -o IdentitiesOnly=yes"
+fi
 
 # Refuse to run off master. A failed rebase once left this checkout in detached
 # HEAD, where commits land nowhere and pushes silently do nothing -- the archive
