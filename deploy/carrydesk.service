@@ -7,8 +7,12 @@ Wants=network-online.target
 Type=simple
 WorkingDirectory=%h/carrydesk
 EnvironmentFile=%h/carrydesk/.env
+# --proxy-headers + --forwarded-allow-ips so the app sees the real external
+# scheme and host behind Caddy. x402 embeds the resource URL in the payment
+# challenge; without this it would advertise http://127.0.0.1:8000 to buyers.
 ExecStart=%h/carrydesk/.venv/bin/python -m uvicorn carrydesk.api:app \
-    --host 127.0.0.1 --port 8000 --workers 1
+    --host 127.0.0.1 --port 8000 --workers 1 \
+    --proxy-headers --forwarded-allow-ips=127.0.0.1
 Restart=always
 RestartSec=10
 

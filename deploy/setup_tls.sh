@@ -47,27 +47,24 @@ fi
 # --- 2. configure -----------------------------------------------------------
 echo "==> writing /etc/caddy/Caddyfile"
 [ -f /etc/caddy/Caddyfile ] && cp /etc/caddy/Caddyfile "/etc/caddy/Caddyfile.bak.$(date +%s)"
+# No `log` block on purpose. The Debian caddy unit is sandboxed (ProtectSystem)
+# and cannot write to /var/log/caddy even when that directory is chowned to the
+# caddy user -- it fails with "permission denied" and exits BEFORE ever
+# requesting a certificate. Caddy's default logging goes to stderr -> journald,
+# which loses nothing: read it with `sudo journalctl -u caddy`.
+#
+# No header_up lines either. Caddy v2's reverse_proxy already preserves Host and
+# sets X-Forwarded-Proto/-For; caddy validate warns that restating them is
+# redundant. Uvicorn is started with --proxy-headers so the app sees the real
+# external scheme, which is what x402 puts in the payment challenge.
 cat > /etc/caddy/Caddyfile <<CADDY
 $DOMAIN {
-	reverse_proxy $UPSTREAM {
-		# x402 puts the resource URL in the payment challenge, so the app has
-		# to see the real external scheme and host, not 127.0.0.1.
-		header_up X-Forwarded-Proto {scheme}
-		header_up Host {host}
-	}
-
+	reverse_proxy $UPSTREAM
 	encode gzip
-
-	log {
-		output file /var/log/caddy/carrydesk.log {
-			roll_size 20mb
-			roll_keep 5
-		}
-	}
 }
 CADDY
-mkdir -p /var/log/caddy && chown -R caddy:caddy /var/log/caddy
-caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null
+caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile 2>&1 | grep -Ei "^error|error:" && exit 1
+echo "==> Caddyfile valid"
 
 # --- 3. firewall (only if already in use) -----------------------------------
 if command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | grep -q "Status: active"; then
