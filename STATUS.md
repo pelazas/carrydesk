@@ -63,6 +63,34 @@ action is a human posting once, and it cannot be delegated.
 
 ---
 
+## 2026-08-02 — page rewritten for humans, plus the real backtest
+
+The page led with method ("cross-sectional ranking by trailing 14-day mean
+funding") — accurate, and meaningless to everyone we need to reach. It now
+leads with the fact, explains what a funding rate actually is, and labels the
+stat tiles in English.
+
+**Bug shipped and caught within the hour:** the new hero was static — "Somebody
+is paying you to take the other side" — while the carry spread can go negative,
+which the page says two paragraphs below. On a negative day the headline would
+have been false while its own lede said the opposite. Both halves now derive
+from the same value; `tests/test_page_copy.py` pins it.
+
+**Added the real 6.89-year backtest** (40 Binance perps, 2019–2026, maker fills,
+costs modelled), including gross 2.0 at +36% full-sample / +28.8% out-of-sample
+against a −37.7% drawdown, and a "why you should discount it" section carrying
+the train→test degradation, the multiple-testing problem, and the
+Binance-vs-Hyperliquid mismatch. Every figure was checked against
+`RESULTS.md` before publishing. See `DECISIONS.md` D11 — nothing is invented,
+ever, and the honest version turned out to be the stronger one.
+
+**Also covered:** the validation gate and refresh loop, which had zero tests
+despite being what keeps wrong numbers off a site that publishes unattended.
+17 tests; the gate was already correct. And the MCP paid path was verified on
+**mainnet** for the first time — the last untested combination.
+
+---
+
 ## 2026-08-02 — cron hardening (what survives after the session ends)
 
 Ran every cron job under a stripped cron environment (`env -i`, minimal PATH,

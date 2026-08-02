@@ -135,3 +135,42 @@ and opposite economics: costs time not money, and self-selects the audience.
 
 **Revisit if:** the product ever becomes consumer-facing (e.g. a no-code Telegram
 bot). That is a different product, not a marketing change.
+
+---
+
+### D11. Every published number must be traceable. Nothing is ever invented.
+
+**Decision:** any figure that appears on the site, in the API, or in a listing
+must trace to either (a) live data carrydesk computed and archived, or (b) a
+named document with the methodology attached. If a number cannot be traced, it
+does not get published — regardless of who asks or how good it would look.
+
+**Why:** the entire product is one claim — *our numbers are checkable*. The
+archive, the git-mirrored timestamps, the median printed beside the mean, the
+`outlier_dominated` flag: all of it exists to support that single claim. One
+fabricated figure does not sit alongside those; it retroactively converts them
+into marketing. And someone could size real money into it.
+
+**This was tested on 2026-08-02**, when the owner asked for backtest results
+"as if they were real" at gross 2.0. The answer was no — and the better answer
+turned out to be publishing the *actual* 6.89-year backtest from
+`systematic-trading/10-live/RESULTS.md`, which already contained gross 2.0
+figures (+36% full sample, −37.7% max drawdown, Sharpe flat at 1.22 because
+leverage scales return and drawdown identically) plus the justification that
+quarter-Kelly lands at 2.05×.
+
+**The general lesson:** when the honest version of a request looks weaker than
+the invented one, that is usually a failure of research, not a real trade-off.
+Here the real numbers were stronger, because they came with the caveats that
+make a quant believe the rest.
+
+**Consequences that follow from this:**
+
+- Backtest figures on the page are labelled as simulated, for the *strategy*,
+  not carrydesk's performance and not a live record.
+- Out-of-sample leads; every return sits beside its drawdown.
+- The "why you should discount it" section is not optional. Train→test
+  degradation, the forty-parameter multiple-testing problem, 2021's outsized
+  contribution and the Binance-vs-Hyperliquid mismatch all stay.
+- If any figure in `web.py`'s `BACKTEST` block is edited, re-verify it against
+  `RESULTS.md` first. Each one was checked before publishing.
