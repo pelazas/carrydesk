@@ -383,6 +383,14 @@ async def method():
                 "typical coin. Has run around 4.0 on live data; set your own "
                 "threshold rather than relying on the boolean below."
             ),
+            "expected_annual_return": (
+                "Gross carry at the reference leverages, given twice: "
+                "`from_median` (what a typical coin supports -- plan against "
+                "this) and `from_mean` (what an equal-weighted book earns if "
+                "the extreme funders stay put and tradable). The two have "
+                "differed by ~4.7x in practice. Both are before fees, slippage "
+                "and borrow, and both assume the current spread persists."
+            ),
             "outlier_dominated": (
                 "True when median < 0.5 * mean, i.e. the headline materially "
                 "overstates the typical coin. Fires often, because this "

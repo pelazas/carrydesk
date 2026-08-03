@@ -98,6 +98,11 @@ Two more fields tell you how far apart they are:
 - `outlier_dominated` — true when median < 0.5 * mean. Fires often, because
   this universe genuinely is outlier-driven most of the time.
 
+`expected_annual_return` is given twice for the same reason: `from_median` is
+what a typical coin supports and the figure to plan against; `from_mean` is what
+an equal-weighted book earns if the extreme funders stay put and stay tradable.
+Those have differed by about 4.7x in practice.
+
 Readings of 50% headline against 13% median are routine. **Quote the median, or
 quote all three.** One or two illiquid coins funding at 200%/yr carry the mean,
 and you cannot trade size in them.

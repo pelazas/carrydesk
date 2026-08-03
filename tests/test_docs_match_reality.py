@@ -30,6 +30,9 @@ HONESTY_FIELDS = [
     "carry_spread_annualized_median",
     "headline_vs_typical",
     "outlier_dominated",
+    # Missed by the first pass, which is how it stayed undocumented while being
+    # the field most likely to drive a decision.
+    "expected_annual_return",
 ]
 
 

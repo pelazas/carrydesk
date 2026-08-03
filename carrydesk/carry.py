@@ -162,9 +162,31 @@ def build_ranking(
         "long_leg_mean_annualized": annualize(long_mean),
         "short_leg_mean_annualized": annualize(short_mean),
         # Expected gross carry before costs, at the reference leverages.
+        #
+        # This is the most actionable field in the payload -- it is named
+        # "expected annual return" -- so it was also the most dangerous one to
+        # derive from the mean alone. The mean has been overstating the typical
+        # coin by ~4.7x, which turned a plausible 11%/yr into a headline 52%.
+        #
+        # Both bases are published, median first, because the median is the one
+        # a reader should plan against. Anyone who wants the optimistic figure
+        # can still have it; they just cannot get it by accident.
         "expected_annual_return": {
-            "gross_1.0": 0.5 * annualize(spread_hourly),
-            "gross_2.0": 1.0 * annualize(spread_hourly),
+            "from_median": {
+                "gross_1.0": 0.5 * annualize(spread_median),
+                "gross_2.0": 1.0 * annualize(spread_median),
+            },
+            "from_mean": {
+                "gross_1.0": 0.5 * annualize(spread_hourly),
+                "gross_2.0": 1.0 * annualize(spread_hourly),
+            },
+            "basis_note": (
+                "from_median is what a typical coin supports and is the figure to "
+                "plan against. from_mean is what an equal-weighted book earns if "
+                "the extreme funders stay put and stay tradable -- they usually "
+                "do neither. Both are gross of fees, slippage and borrow, and "
+                "assume the current spread persists, which it does not."
+            ),
         },
         "rankings": rows,
     }

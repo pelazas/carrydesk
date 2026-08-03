@@ -63,8 +63,8 @@ def test_carry_spread_matches_leg_means():
     # longs mean = -2e-4, shorts mean = +3e-4, spread = 5e-4/hr
     assert snap["carry_spread_hourly"] == pytest.approx(5e-4)
     assert snap["carry_spread_annualized"] == pytest.approx(annualize(5e-4))
-    # Expected return at gross 1.0 is half the spread.
-    assert snap["expected_annual_return"]["gross_1.0"] == pytest.approx(
+    # Expected return at gross 1.0 is half the spread, on the mean basis.
+    assert snap["expected_annual_return"]["from_mean"]["gross_1.0"] == pytest.approx(
         0.5 * annualize(5e-4)
     )
 
@@ -168,3 +168,48 @@ def test_free_view_carries_both_honesty_fields():
     pairs = [mk(f"C{i}", (i - 10) * 1e-5) for i in range(20)]
     fv = free_view(build(pairs, k=6), k=2)
     assert "outlier_dominated" in fv and "headline_vs_typical" in fv
+
+
+# --- expected_annual_return is the most actionable field in the payload ------
+#
+# It is named "expected annual return", so it is what a reader plans against.
+# Derived from the mean alone it was overstating the typical coin by ~4.7x --
+# a 52%/yr headline where the median supported 11%.
+
+
+def test_expected_return_is_published_on_both_bases():
+    pairs = [mk(c, f) for c, f in [
+        ("A", -1e-5), ("B", -1e-5), ("C", -1e-5),
+        ("X", 1e-5), ("Y", 1e-5), ("HUGE", 3e-4),
+    ]]
+    e = build(pairs, k=3)["expected_annual_return"]
+    assert set(e) == {"from_median", "from_mean", "basis_note"}
+    for basis in ("from_median", "from_mean"):
+        assert set(e[basis]) == {"gross_1.0", "gross_2.0"}
+
+
+def test_median_basis_is_not_the_inflated_one():
+    """The whole point: the conservative figure must actually be conservative."""
+    pairs = [mk(c, f) for c, f in [
+        ("A", -1e-5), ("B", -1e-5), ("C", -1e-5),
+        ("X", 1e-5), ("Y", 1e-5), ("HUGE", 3e-4),
+    ]]
+    e = build(pairs, k=3)["expected_annual_return"]
+    assert e["from_median"]["gross_2.0"] < e["from_mean"]["gross_2.0"]
+
+
+def test_gross_2_is_exactly_twice_gross_1_on_both_bases():
+    """Leverage scales the carry linearly; anything else is an arithmetic bug."""
+    pairs = [mk(c, f) for c, f in [
+        ("A", -2e-5), ("B", -1e-5), ("X", 1e-5), ("Y", 2e-5),
+    ]]
+    e = build(pairs, k=2)["expected_annual_return"]
+    for basis in ("from_median", "from_mean"):
+        assert e[basis]["gross_2.0"] == pytest.approx(2 * e[basis]["gross_1.0"])
+
+
+def test_basis_note_warns_that_the_spread_does_not_persist():
+    pairs = [mk(c, f) for c, f in [("A", -1e-5), ("B", 1e-5)]]
+    note = build(pairs, k=1)["expected_annual_return"]["basis_note"].lower()
+    assert "gross of fees" in note
+    assert "persist" in note
