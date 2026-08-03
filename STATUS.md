@@ -183,6 +183,45 @@ of a registry that requires a published package. Both recorded in `BACKLOG.md`.
 
 ---
 
+## 2026-08-03 — every scheduled job and transition now proven in production
+
+Nothing in the system is unexercised any more.
+
+| Event | First unattended run | Result |
+|---|---|---|
+| Ops probe (10 min) | 2026-08-02 | fires on schedule, Telegram verified |
+| Archive push (03:00 UTC) | 2026-08-03 03:00 | committed and pushed as `carrydesk` |
+| Daily post (08:05 UTC) | 2026-08-03 08:05 | rendered with the corrected wording |
+| Free tier live → delayed | 2026-08-03 09:43:48 | flipped at the 24h boundary, to the second |
+| Weekly audit (Mon 09:00 UTC) | pending | script verified under a stripped cron env |
+
+The delayed flip propagated everywhere it should: `/v1/free/carry` now serves a
+snapshot exactly 24.0h old, the page footer reads "delayed 24h", the daily post
+says "Delayed 24h" rather than the "Delayed 0h" it would have printed before
+this morning's fix, and the paid routes still gate live data behind 402.
+
+**That is also the paid tier earning its price for the first time.** Free shows
+yesterday: 43.4% mean / 10.8% median across 10 of 39 coins. Live, behind the
+paywall, is 57.7% / 14.1% across all 39.
+
+### Claim-vs-behaviour audit — the technique that found everything
+
+Six rounds, and every defect came from a *description* drifting from
+*behaviour*, never from untested code. In order found: the honesty flag firing
+on 1 of 50 snapshots; `/v1/method` documenting none of the honesty fields; the
+OpenAPI spec advertising no 402 at all; schema.org claiming
+`isAccessibleForFree` while metered; `AGENTS.md` still saying nothing was
+listed anywhere; the archive count conflating 66 snapshots with 19 hours of
+coverage; the README example contradicting its own rule; the daily post
+exceeding 280 characters with real tickers; **`expected_annual_return` derived
+from the mean alone and overstating by 4.7x**; and `full_universe_size`
+duplicating `universe_size` while the caller's actual coin count went unstated.
+
+Most of those surfaces are now pinned by `tests/test_docs_match_reality.py`,
+which fails if a published field goes undocumented in either direction.
+
+---
+
 ## Where it stands — 2026-08-02
 
 **Live at https://carry.pelazas.com, settling real USDC on Base mainnet.**
