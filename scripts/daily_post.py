@@ -105,6 +105,16 @@ def render_markdown(snap: dict) -> str:
         "A structural risk premium, not a prediction — it can go negative.",
         "Not investment advice.",
         "",
+        # The exact snapshot, not just the date. A day holds ~24 snapshots and
+        # the free tier serves whichever is newest past the delay, so "the post
+        # for 2026-08-02" is not one number -- rendered at 11:51 it said +44.6%,
+        # and three hours later the same date rendered +49.3%. Citing the
+        # timestamp makes the claim checkable against exactly one immutable line
+        # in the archive, which is the whole point of publishing in advance.
+        f"Snapshot `{snap['as_of']}` (`as_of_ts` {snap['as_of_ts']}) — verifiable "
+        f"in <https://carry.pelazas.com/archive> and in "
+        f"`data/snapshots/{snap['as_of'][:10]}.jsonl`.",
+        "",
         "Live full ranking: `GET /v1/carry/rankings`",
     ]
     return "\n".join(lines)
@@ -173,6 +183,12 @@ def main() -> int:
             "not about -- eventually two files with the same title."
         ),
     )
+    p.add_argument(
+        "--force",
+        action="store_true",
+        help="overwrite an existing post. Only correct if the existing one was "
+        "never published anywhere.",
+    )
     p.add_argument("--timeout", type=float, default=20.0)
     args = p.parse_args()
 
@@ -202,6 +218,16 @@ def main() -> int:
         os.makedirs(args.out_dir, exist_ok=True)
         ext = "md" if args.format == "md" else "txt"
         out = os.path.join(args.out_dir, f"{snap['as_of'][:10]}.{ext}")
+        # Write-once. A day holds ~24 snapshots and the free tier serves
+        # whichever is newest past the delay, so a rerun files *different*
+        # numbers under the same date -- the first version of this script would
+        # have quietly overwritten a published post with a later reading. A
+        # track record that can be edited after the fact proves nothing, which
+        # is the same reason the snapshot archive is append-only.
+        if os.path.exists(out) and not args.force:
+            print(f"{out} already exists -- not overwriting a published post "
+                  f"(pass --force if you are certain)", file=sys.stderr)
+            return 0
     if out:
         with open(out, "w") as fh:
             fh.write(text + "\n")

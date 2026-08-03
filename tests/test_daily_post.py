@@ -151,10 +151,8 @@ def test_out_dir_names_the_file_after_the_snapshot(tmp_path):
     assert "2026-08-02" in files[0].read_text().splitlines()[0]
 
 
-def test_rerunning_does_not_create_a_second_file(tmp_path):
+def _run(tmp_path, s, *extra):
     import sys
-    s = snap()
-    s["as_of"] = "2026-08-02T09:43:48+00:00"
 
     def fake_get(url, timeout=None):
         class R:
@@ -166,9 +164,71 @@ def test_rerunning_does_not_create_a_second_file(tmp_path):
     old_get, old_argv = dp.httpx.get, sys.argv
     try:
         dp.httpx.get = fake_get
-        for _ in range(3):
-            sys.argv = ["daily_post", "--out-dir", str(tmp_path)]
-            dp.main()
+        sys.argv = ["daily_post", "--out-dir", str(tmp_path), *extra]
+        return dp.main()
     finally:
         dp.httpx.get, sys.argv = old_get, old_argv
+
+
+def test_rerunning_does_not_create_a_second_file(tmp_path):
+    s = snap()
+    s["as_of"] = "2026-08-02T09:43:48+00:00"
+    for _ in range(3):
+        _run(tmp_path, s)
     assert len(list(tmp_path.glob("*.md"))) == 1, "reruns accumulated duplicates"
+
+
+# --- a published post must never change afterwards --------------------------
+#
+# The archive holds ~24 snapshots per day and the free tier serves whichever is
+# newest past the 24h delay, so the same *date* renders different numbers as the
+# day goes on: 2026-08-02 rendered +44.6% at 11:51 and +49.3% three hours later.
+# Because the filename comes from the date, the second run overwrote the first.
+#
+# That is worse than a duplicate. The daily post exists to show what the ranking
+# said *in advance*; a file that silently changes proves nothing at all. The
+# earlier test asserted only that reruns produce one file -- which is exactly the
+# property that made it an overwrite -- so it passed throughout.
+
+
+def test_a_second_run_with_different_numbers_does_not_rewrite_the_post(tmp_path):
+    first = snap()
+    first["as_of"] = "2026-08-02T09:43:48+00:00"
+    first["carry_spread_annualized"] = 0.446
+    assert _run(tmp_path, first) == 0
+    published = (tmp_path / "2026-08-02.md").read_text()
+    assert "+44.6%" in published
+
+    later = snap()                       # same DATE, later snapshot, new numbers
+    later["as_of"] = "2026-08-02T14:58:15+00:00"
+    later["carry_spread_annualized"] = 0.493
+    assert _run(tmp_path, later) == 0
+
+    assert (tmp_path / "2026-08-02.md").read_text() == published, (
+        "a later reading overwrote an already-published post"
+    )
+    assert len(list(tmp_path.glob("*.md"))) == 1
+
+
+def test_force_is_the_only_way_to_replace_a_post(tmp_path):
+    first = snap()
+    first["as_of"] = "2026-08-02T09:43:48+00:00"
+    first["carry_spread_annualized"] = 0.446
+    _run(tmp_path, first)
+
+    later = snap()
+    later["as_of"] = "2026-08-02T14:58:15+00:00"
+    later["carry_spread_annualized"] = 0.493
+    _run(tmp_path, later, "--force")
+    assert "+49.3%" in (tmp_path / "2026-08-02.md").read_text()
+
+
+def test_the_post_cites_the_exact_snapshot_not_just_the_day():
+    """So a reader can check it against one immutable line in the archive."""
+    s = snap()
+    s["as_of"] = "2026-08-02T14:58:15+00:00"
+    s["as_of_ts"] = 1785769095
+    md = dp.render_markdown(s)
+    assert "2026-08-02T14:58:15+00:00" in md, "post does not name its snapshot"
+    assert "1785769095" in md, "post does not give the archive key to look up"
+    assert "data/snapshots/2026-08-02.jsonl" in md
