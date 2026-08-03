@@ -529,12 +529,17 @@ async def root(request: Request):
         from .discovery import json_ld
 
         fv = free_view(snap)
+        # Bound EVERY archive read on this page to the instant the tiles show.
+        # The JSON-LD catalog count was the fourth place this leaked: machines
+        # were told the full archive size while humans saw the delayed slice.
+        cutoff = snap.get("as_of_ts")
+        shown = store.totals(until_ts=cutoff)
         return HTMLResponse(
-            render(fv, delayed, store.health()["archived_days"],
-                   json_ld(fv, store.totals()),
+            render(fv, delayed, shown["days"],
+                   json_ld(fv, shown),
                    # Truncate the chart to the same instant the tiles show, or
                    # it hands out live data the delay is meant to withhold.
-                   store.spread_series(until_ts=snap.get("as_of_ts")))
+                   store.spread_series(until_ts=cutoff))
         )
     return _index()
 
