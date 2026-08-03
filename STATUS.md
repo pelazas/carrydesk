@@ -349,18 +349,25 @@ exposed in the **free** tier as well as paid.
 
 ## Next up (in order)
 
-The build is done. Everything below is distribution.
+Items 2–4 of the previous version of this list — make the repo public, mainnet
+payments, listings — were all shipped and the list was not updated. Anything
+below that gets done gets **deleted from here in the same commit as the code**,
+because a stale plan is read as a real one.
 
-1. **Publish the daily snapshot.** `scripts/daily_post.py` renders and gates it;
-   nothing is posted anywhere. The archive only converts into anything if it is
-   visible. Decision taken: a static page on the service's own domain first.
-2. **Make the repo public** so the MCP server is installable — the strongest
-   channel available. Decision taken: yes, after sanitizing host specifics.
-3. **Mainnet payments.** Needs Coinbase CDP API keys; the public facilitator is
-   testnet-only. Worth doing once someone actually wants the data.
-4. **Listings** — x402 bazaar, MCP directories. Blocked on (2).
-5. **Cross-venue funding.** The natural second product, but one venue done well
-   beats two done badly. Hold until there is demand.
+**One item blocks everything, and an agent cannot do it.**
+
+1. **A human posts once, publicly, pointing at <https://carry.pelazas.com>.**
+   Everything else is built: the service settles real USDC, the MCP server is
+   installable from PyPI, the archive grows hourly, `scripts/daily_post.py`
+   renders a gated post every morning. Nobody has ever arrived. `revenue.py`
+   reports `external_payers: 0` and will keep reporting 0 until this happens —
+   no amount of further engineering changes that number.
+
+2. **Cross-venue funding** (Binance/OKX vs Hyperliquid). The natural second
+   product and a genuinely better one — a cross-venue spread is arbitrage, not
+   just carry. Deliberately held: one venue done well beats two done badly, and
+   building it before (1) is choosing the comfortable task over the necessary
+   one.
 
 ## Deliberately not built
 

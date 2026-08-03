@@ -44,7 +44,7 @@ computation, the archive, and the reliability.
 | MCP server | ✅ 6 tools, verified against production, paid path works |
 | Ops monitor | ✅ every 10 min → Telegram, verified with a real alert |
 | Snapshot archive | ✅ append-only, auto-committed daily |
-| Mainnet payments | ✅ live, two settlements confirmed on-chain |
+| Mainnet payments | ✅ live, settlements confirmed on-chain — `python scripts/revenue.py` |
 | Discovery surfaces | ✅ llms.txt, robots.txt, sitemap, JSON-LD, /archive |
 | Distribution | ⚠️ passive only — nothing posted or listed by a human |
 
@@ -230,4 +230,11 @@ and unauthenticated; mainnet without keys raises at startup; mainnet with keys
 mints a signed EdDSA JWT per facilitator endpoint (verify / settle / supported /
 bazaar), since the JWTs are short-lived and cannot be cached.
 
-Not yet verified: an actual mainnet settlement. Nobody has run one.
+Mainnet settlement is verified end to end: `scripts/test_payment.py` against
+`https://carry.pelazas.com` returns 402, pays, gets 200, and the transfer lands
+on Base. Run `python scripts/revenue.py` for the current count — do not trust a
+number written here, and do not write one.
+
+**Every payment so far is our own test wallet.** The receiving address holding a
+balance is not evidence of demand, and no decision should treat it as such. The
+metric to watch is `external_payers`, which is still 0.
