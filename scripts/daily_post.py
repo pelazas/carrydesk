@@ -163,7 +163,16 @@ def main() -> int:
     p = argparse.ArgumentParser()
     p.add_argument("--url", default="http://127.0.0.1:8000")
     p.add_argument("--format", choices=["md", "x"], default="md")
-    p.add_argument("--out", help="write to file instead of stdout")
+    p.add_argument("--out", help="write to this exact file instead of stdout")
+    p.add_argument(
+        "--out-dir",
+        help=(
+            "write to <dir>/<snapshot date>.md. Prefer this over --out for cron: "
+            "the free tier is delayed, so today's run describes yesterday's data, "
+            "and naming the file from the clock files a post under a date it is "
+            "not about -- eventually two files with the same title."
+        ),
+    )
     p.add_argument("--timeout", type=float, default=20.0)
     args = p.parse_args()
 
@@ -184,10 +193,19 @@ def main() -> int:
         return 1
 
     text = render_markdown(snap) if args.format == "md" else render_x(snap)
-    if args.out:
-        with open(args.out, "w") as fh:
+    out = args.out
+    if args.out_dir:
+        # Name it for the data it contains, which also makes reruns idempotent
+        # rather than accumulating near-duplicates.
+        import os
+
+        os.makedirs(args.out_dir, exist_ok=True)
+        ext = "md" if args.format == "md" else "txt"
+        out = os.path.join(args.out_dir, f"{snap['as_of'][:10]}.{ext}")
+    if out:
+        with open(out, "w") as fh:
             fh.write(text + "\n")
-        print(f"wrote {args.out}", file=sys.stderr)
+        print(f"wrote {out}", file=sys.stderr)
     else:
         print(text)
     return 0

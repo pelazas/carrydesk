@@ -114,3 +114,61 @@ def test_gate_blocks_an_empty_leg():
     s = snap()
     s["longs"] = []
     assert any("empty leg" in p for p in dp.gate(s))
+
+
+# --- filenames must follow the data, not the clock --------------------------
+#
+# The free tier is delayed, so a run at 08:05 describes yesterday. Naming the
+# file from `date -u` files a post under a date it is not about -- and once the
+# delay began, two files would carry the same title with different numbers.
+
+
+def test_out_dir_names_the_file_after_the_snapshot(tmp_path):
+    import sys
+    s = snap()
+    s["as_of"] = "2026-08-02T09:43:48+00:00"
+    argv = ["daily_post", "--out-dir", str(tmp_path)]
+    written = {}
+
+    def fake_get(url, timeout=None):
+        class R:
+            status_code = 200
+            def raise_for_status(self): pass
+            def json(self): return s
+        return R()
+
+    old_get, old_argv = dp.httpx.get, sys.argv
+    try:
+        dp.httpx.get, sys.argv = fake_get, argv
+        assert dp.main() == 0
+    finally:
+        dp.httpx.get, sys.argv = old_get, old_argv
+
+    files = list(tmp_path.glob("*.md"))
+    assert [f.name for f in files] == ["2026-08-02.md"], (
+        "post filed under a date it is not about"
+    )
+    assert "2026-08-02" in files[0].read_text().splitlines()[0]
+
+
+def test_rerunning_does_not_create_a_second_file(tmp_path):
+    import sys
+    s = snap()
+    s["as_of"] = "2026-08-02T09:43:48+00:00"
+
+    def fake_get(url, timeout=None):
+        class R:
+            status_code = 200
+            def raise_for_status(self): pass
+            def json(self): return s
+        return R()
+
+    old_get, old_argv = dp.httpx.get, sys.argv
+    try:
+        dp.httpx.get = fake_get
+        for _ in range(3):
+            sys.argv = ["daily_post", "--out-dir", str(tmp_path)]
+            dp.main()
+    finally:
+        dp.httpx.get, sys.argv = old_get, old_argv
+    assert len(list(tmp_path.glob("*.md"))) == 1, "reruns accumulated duplicates"
