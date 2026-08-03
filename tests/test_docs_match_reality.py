@@ -213,3 +213,44 @@ def test_every_measured_variable_is_a_field_a_consumer_can_fetch(ld, snapshot):
 def test_distributions_say_which_one_costs_money(ld):
     names = " ".join(d["name"] for d in ld["distribution"]).lower()
     assert "free" in names and ("metered" in names or "usdc" in names)
+
+
+# --- worked examples in the README must obey the documented rules -----------
+#
+# The README's sample response showed outlier_dominated: false alongside a mean
+# of 0.3901 and a median of 0.0955 -- a 4.1x gap that the stated rule
+# (median < 0.5 * mean) calls true. A reader would have learned the opposite of
+# the behaviour from the one concrete example we give them.
+
+
+def _readme_sample() -> dict:
+    import pathlib
+    import re
+
+    md = (pathlib.Path(__file__).parent.parent / "README.md").read_text()
+    block = re.search(r"```json\n(.*?)```", md, re.S).group(1)
+    # the sample elides list contents with `...`, which is not valid JSON
+    block = re.sub(r"\[\{.*?\}, \.\.\.\]", "[]", block)
+    return json.loads(block)
+
+
+def test_readme_sample_obeys_the_outlier_rule():
+    s = _readme_sample()
+    expected = abs(s["carry_spread_annualized_median"]) < 0.5 * abs(s["carry_spread_annualized"])
+    assert s["outlier_dominated"] is expected, (
+        "the README example contradicts the documented outlier_dominated rule"
+    )
+
+
+def test_readme_sample_ratio_is_arithmetically_right():
+    s = _readme_sample()
+    actual = abs(s["carry_spread_annualized"] / s["carry_spread_annualized_median"])
+    assert abs(s["headline_vs_typical"] - actual) < 0.05, (
+        "headline_vs_typical in the README does not equal mean/median as shown"
+    )
+
+
+def test_readme_sample_only_shows_fields_we_actually_return(snapshot):
+    fv = free_view(snapshot)
+    for key in _readme_sample():
+        assert key in fv, f"README sample shows `{key}`, which the API does not return"

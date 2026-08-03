@@ -41,15 +41,18 @@ curl -s https://carry.pelazas.com/v1/free/carry | jq
   "carry_spread_annualized": 0.3901,
   "carry_spread_annualized_trimmed": 0.2231,
   "carry_spread_annualized_median": 0.0955,
-  "outlier_dominated": false,
+  "headline_vs_typical": 4.09,
+  "outlier_dominated": true,
   "longs":  [{"coin": "PENGU", "mean_funding_annualized": -0.0636}, ...],
   "shorts": [{"coin": "SAGA",  "mean_funding_annualized":  1.9886}, ...]
 }
 ```
 
-Three spread numbers, always. The headline mean is what an equal-weighted book
-earns; the trimmed and median readings tell you whether one illiquid name is
-carrying it. On the reading above, SAGA alone accounts for most of the gap — that
+Three spread numbers, always, plus two that say how far apart they are. The
+headline mean is what an equal-weighted book earns; the median is what a typical
+coin pays. `headline_vs_typical` is the multiple between them — about 4 in the
+sample above, and around 4 in practice — and `outlier_dominated` fires when the
+median drops below half the mean. On the reading above, SAGA alone accounts for most of the gap — that
 is exactly the kind of thing a single number would hide.
 
 ---
@@ -77,7 +80,7 @@ wallet-less install is still useful.
 ```bash
 uv venv --python 3.12 && uv pip install -e ".[dev]"
 .venv/bin/python -m uvicorn carrydesk.api:app --reload   # open, no paywall
-.venv/bin/python -m pytest -q                            # 14 tests, no network
+.venv/bin/python -m pytest -q                            # full suite, no network
 ```
 
 With `X402_PAY_TO` unset the service runs fully open — that is the dev default.
