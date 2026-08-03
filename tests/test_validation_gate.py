@@ -230,3 +230,25 @@ def test_distinct_hours_spans_day_files(store):
     write_at(store, base + 3600)
     t = store.totals()
     assert t["days"] == 2 and t["distinct_hours"] == 2
+
+
+def test_totals_can_be_bounded_to_what_a_delayed_page_shows(store):
+    """The /archive header advertised 84 snapshots above a table listing 22 --
+    counting evidence the page withholds, on a page whose whole argument is
+    that the reader can check it."""
+    base = 1785700000 - (1785700000 % 3600)
+    for h in range(6):
+        write_at(store, base + h * 3600)
+    cutoff = base + 2 * 3600
+    shown, full = store.totals(until_ts=cutoff), store.totals()
+    assert shown["snapshots"] == 3 and full["snapshots"] == 6
+    assert shown["distinct_hours"] == 3 and full["distinct_hours"] == 6
+    assert shown["snapshots"] < full["snapshots"], "bounding had no effect"
+
+
+def test_bounded_totals_days_reflect_only_shown_days(store):
+    base = 1785715200  # a UTC midnight
+    write_at(store, base - 3600)   # previous day
+    write_at(store, base + 3600)   # next day
+    assert store.totals()["days"] == 2
+    assert store.totals(until_ts=base - 1800)["days"] == 1

@@ -580,8 +580,10 @@ async def archive():
 
     cutoff = (store.delayed() or {}).get("as_of_ts")
     return HTMLResponse(
-        render_archive(store.archive_index(until_ts=cutoff), store.totals(),
-                       store.spread_series(until_ts=cutoff))
+        render_archive(store.archive_index(until_ts=cutoff),
+                       store.totals(until_ts=cutoff),
+                       store.spread_series(until_ts=cutoff),
+                       store.totals())
     )
 
 

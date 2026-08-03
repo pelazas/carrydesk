@@ -249,7 +249,7 @@ class SnapshotStore:
             rows = picked
         return rows
 
-    def totals(self) -> dict:
+    def totals(self, until_ts: int | None = None) -> dict:
         """Archive size, reported honestly.
 
         `snapshots` is the raw line count, and it flatters: the service
@@ -260,6 +260,11 @@ class SnapshotStore:
         `distinct_hours` is the number of clock-hours actually covered, which
         is what a reader means when they ask how much record exists. Publish
         both, for the same reason the median sits beside the mean.
+
+        `until_ts` bounds the count to what a delayed page can actually show.
+        Without it the /archive header advertised 84 snapshots above a table
+        listing 22 -- counting evidence the page withholds, on a page whose
+        whole argument is that the reader can check it.
         """
         n = 0
         hours: set[str] = set()
@@ -267,18 +272,20 @@ class SnapshotStore:
             for line in path.read_text().splitlines():
                 if not line.strip():
                     continue
-                n += 1
                 try:
                     ts = json.loads(line).get("as_of_ts")
                 except json.JSONDecodeError:
                     continue
+                if until_ts is not None and ts and ts > until_ts:
+                    continue
+                n += 1
                 if ts:
                     hours.add(
                         datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%dT%H")
                     )
         return {
             "snapshots": n,
-            "days": len(list(self.dir.glob("*.jsonl"))),
+            "days": len({h[:10] for h in hours}) or len(list(self.dir.glob("*.jsonl"))),
             "distinct_hours": len(hours),
         }
 

@@ -97,7 +97,8 @@ def _rows(items: list[dict], side: str) -> str:
     )
 
 
-def render_archive(index: list[dict], totals: dict, series: list[dict] | None = None) -> str:
+def render_archive(index: list[dict], totals: dict, series: list[dict] | None = None,
+                   full_totals: dict | None = None) -> str:
     """Every snapshot day ever published. The proof, made browsable.
 
     A JSONL file in a repo is evidence; a page anyone can open is persuasion.
@@ -119,6 +120,16 @@ def render_archive(index: list[dict], totals: dict, series: list[dict] | None = 
         )
     body = "".join(rows) or '<tr><td colspan="5" class="dim">No snapshots yet.</td></tr>'
     chartblock = render_chart(series or [])
+    # Say plainly that more exists but is held back, rather than counting it
+    # silently in a header above a table that does not show it.
+    withheld = ""
+    ft = full_totals or {}
+    if ft.get("snapshots", 0) > totals.get("snapshots", 0):
+        withheld = (
+            f" A further <strong>{ft['snapshots'] - totals.get('snapshots', 0)}</strong>"
+            f" snapshots are archived but held back &mdash; this page is delayed"
+            f" {C.FREE_TIER_DELAY_HOURS}h, like the free tier."
+        )
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -126,11 +137,11 @@ def render_archive(index: list[dict], totals: dict, series: list[dict] | None = 
 <meta name="description" content="Every funding-carry snapshot carrydesk has published, timestamped and never edited.">
 <style>{CSS}</style></head><body><div class="wrap">
 <h1>Published archive</h1>
-<p class="sub"><strong>{totals.get("distinct_hours", 0)}</strong> distinct hours covered,
+<p class="sub"><strong>{totals.get("distinct_hours", 0)}</strong> distinct hours shown below,
 from <strong>{totals.get("snapshots", 0)}</strong> snapshots across
-<strong>{totals.get("days", 0)}</strong> day(s). Appended on every refresh &mdash; hourly in
-steady state, plus once whenever the service restarts &mdash; and never edited.
-Each row shows that day's final reading.</p>
+<strong>{totals.get("days", 0)}</strong> day(s).{withheld} Appended on every refresh
+&mdash; hourly in steady state, plus once whenever the service restarts &mdash; and never
+edited. Each row shows that day's final reading.</p>
 
 <h2>Carry spread over time</h2>
 {chartblock}
