@@ -219,7 +219,12 @@ def free_view(snapshot: dict, k: int = C.FREE_TIER_K) -> dict:
         "expected_annual_return": snapshot.get("expected_annual_return"),
         "tier": "free",
         "showing": f"top {k} of each leg",
-        "full_universe_size": snapshot.get("universe_size"),
+        # What the caller actually received, versus what the ranking covers.
+        # `full_universe_size` used to sit here holding the same value as
+        # `universe_size` -- two names for one number, implying a distinction
+        # that did not exist, while the thing a free caller most needs to know
+        # (they have 10 of 39 coins) was stated nowhere.
+        "coins_shown": len(longs) + len(shorts),
         "longs": [trim(r) for r in longs],
         "shorts": [trim(r) for r in shorts],
     }

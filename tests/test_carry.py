@@ -213,3 +213,14 @@ def test_basis_note_warns_that_the_spread_does_not_persist():
     note = build(pairs, k=1)["expected_annual_return"]["basis_note"].lower()
     assert "gross of fees" in note
     assert "persist" in note
+
+
+def test_free_view_states_what_the_caller_actually_got():
+    """`full_universe_size` duplicated `universe_size` while the number that
+    matters to a free caller -- how many coins they received -- was absent."""
+    pairs = [mk(f"C{i}", (i - 10) * 1e-5) for i in range(20)]
+    fv = free_view(build(pairs, k=6), k=3)
+    assert "full_universe_size" not in fv
+    assert fv["coins_shown"] == 6
+    assert fv["universe_size"] == 20
+    assert fv["coins_shown"] < fv["universe_size"], "free tier must be a subset"
