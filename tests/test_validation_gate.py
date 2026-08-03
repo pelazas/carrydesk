@@ -184,3 +184,49 @@ def test_archive_line_is_valid_json_and_complete(store):
     for k in ("as_of", "as_of_ts", "carry_spread_annualized",
               "carry_spread_annualized_median", "rankings", "universe_size"):
         assert k in parsed
+
+
+# --- the archive count must not flatter -------------------------------------
+#
+# The page advertised "66 snapshots", which reads as 66 observations. In fact
+# the service recomputes on every restart, so 41 of the first 65 gaps were under
+# five minutes and the real coverage was 19 hours. Same failure as quoting a
+# mean without its median: a number that sounds better than the record.
+
+
+def write_at(store: SnapshotStore, ts: int) -> None:
+    from datetime import datetime, timezone
+    s = good()
+    s["as_of_ts"] = ts
+    s["as_of"] = datetime.fromtimestamp(ts, tz=timezone.utc).isoformat()
+    day = datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%d")
+    with (store.dir / f"{day}.jsonl").open("a") as fh:
+        fh.write(json.dumps(s) + "\n")
+
+
+def test_distinct_hours_ignores_restart_bursts(store):
+    """Six snapshots inside one hour are one hour of record, not six."""
+    base = 1785700000 - (1785700000 % 3600)
+    for offset in (0, 30, 60, 90, 120, 200):
+        write_at(store, base + offset)
+    t = store.totals()
+    assert t["snapshots"] == 6
+    assert t["distinct_hours"] == 1
+
+
+def test_distinct_hours_counts_real_coverage(store):
+    base = 1785700000 - (1785700000 % 3600)
+    for h in range(5):
+        write_at(store, base + h * 3600)
+        write_at(store, base + h * 3600 + 45)  # a restart in the same hour
+    t = store.totals()
+    assert t["snapshots"] == 10
+    assert t["distinct_hours"] == 5, "restart duplicates inflated the coverage figure"
+
+
+def test_distinct_hours_spans_day_files(store):
+    base = 1785715200  # a UTC midnight
+    write_at(store, base - 3600)
+    write_at(store, base + 3600)
+    t = store.totals()
+    assert t["days"] == 2 and t["distinct_hours"] == 2

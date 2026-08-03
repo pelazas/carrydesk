@@ -126,8 +126,10 @@ def render_archive(index: list[dict], totals: dict, series: list[dict] | None = 
 <meta name="description" content="Every funding-carry snapshot carrydesk has published, timestamped and never edited.">
 <style>{CSS}</style></head><body><div class="wrap">
 <h1>Published archive</h1>
-<p class="sub"><strong>{totals.get("snapshots", 0)}</strong> snapshots across
-<strong>{totals.get("days", 0)}</strong> day(s), appended hourly and never edited.
+<p class="sub"><strong>{totals.get("distinct_hours", 0)}</strong> distinct hours covered,
+from <strong>{totals.get("snapshots", 0)}</strong> snapshots across
+<strong>{totals.get("days", 0)}</strong> day(s). Appended on every refresh &mdash; hourly in
+steady state, plus once whenever the service restarts &mdash; and never edited.
 Each row shows that day's final reading.</p>
 
 <h2>Carry spread over time</h2>

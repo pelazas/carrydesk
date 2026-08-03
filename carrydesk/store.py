@@ -239,10 +239,37 @@ class SnapshotStore:
         return rows
 
     def totals(self) -> dict:
+        """Archive size, reported honestly.
+
+        `snapshots` is the raw line count, and it flatters: the service
+        recomputes on every restart, so a day of active deployment produces
+        several times the hourly cadence. Of the first 65 gaps, 41 were under
+        five minutes apart -- restart artifacts, not new observations.
+
+        `distinct_hours` is the number of clock-hours actually covered, which
+        is what a reader means when they ask how much record exists. Publish
+        both, for the same reason the median sits beside the mean.
+        """
         n = 0
+        hours: set[str] = set()
         for path in self.dir.glob("*.jsonl"):
-            n += sum(1 for line in path.read_text().splitlines() if line.strip())
-        return {"snapshots": n, "days": len(list(self.dir.glob("*.jsonl")))}
+            for line in path.read_text().splitlines():
+                if not line.strip():
+                    continue
+                n += 1
+                try:
+                    ts = json.loads(line).get("as_of_ts")
+                except json.JSONDecodeError:
+                    continue
+                if ts:
+                    hours.add(
+                        datetime.fromtimestamp(ts, tz=timezone.utc).strftime("%Y-%m-%dT%H")
+                    )
+        return {
+            "snapshots": n,
+            "days": len(list(self.dir.glob("*.jsonl"))),
+            "distinct_hours": len(hours),
+        }
 
     def health(self) -> dict:
         stale = None

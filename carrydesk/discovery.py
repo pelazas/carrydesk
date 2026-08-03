@@ -224,8 +224,10 @@ def json_ld(snap: dict, totals: dict) -> str:
             "name": "carrydesk published archive",
             "url": f"{u}/archive",
             "description": (
-                f"{totals.get('snapshots', 0)} snapshots published to date, "
-                "append-only and mirrored to a public git repository."
+                f"{totals.get('distinct_hours', 0)} distinct hours covered by "
+                f"{totals.get('snapshots', 0)} snapshots, append-only and mirrored "
+                "to a public git repository. Snapshot count exceeds hours because "
+                "the service also recomputes on restart."
             ),
         },
         "distribution": [
