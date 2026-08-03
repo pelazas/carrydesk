@@ -174,3 +174,42 @@ def test_free_routes_do_not_claim_to_be_paid(openapi):
     for path in ("/health", "/v1/free/carry", "/v1/method"):
         op = openapi["paths"][path]["get"]
         assert "402" not in op["responses"], f"{path} is free but advertises a 402"
+
+
+# --- schema.org markup is ingested by machines, not read by people ----------
+#
+# It claimed isAccessibleForFree: true while three endpoints are metered, which
+# would have had dataset aggregators index carrydesk as freely accessible. It
+# also listed a variable no consumer can fetch.
+
+
+@pytest.fixture(scope="module")
+def ld(snapshot) -> dict:
+    from carrydesk.discovery import json_ld
+
+    return json.loads(json_ld(free_view(snapshot), {"snapshots": 60}))
+
+
+def test_dataset_does_not_claim_to_be_free_while_metered(ld):
+    assert ld["isAccessibleForFree"] is False, (
+        "the full dataset is metered; claiming free misleads dataset aggregators"
+    )
+
+
+def test_offers_quote_the_prices_actually_charged(ld):
+    quoted = {o["price"] for o in ld["offers"]}
+    for price in (C.PRICE_RANKINGS, C.PRICE_HISTORY, C.PRICE_UNIVERSE):
+        assert price.lstrip("$") in quoted, f"{price} is charged but not offered in the markup"
+
+
+def test_every_measured_variable_is_a_field_a_consumer_can_fetch(ld, snapshot):
+    fv = free_view(snapshot)
+    for v in ld["variableMeasured"]:
+        assert v["name"] in fv, (
+            f"{v['name']} is advertised as a measured variable but is not in the payload"
+        )
+
+
+def test_distributions_say_which_one_costs_money(ld):
+    names = " ".join(d["name"] for d in ld["distribution"]).lower()
+    assert "free" in names and ("metered" in names or "usdc" in names)

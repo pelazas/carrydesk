@@ -167,7 +167,36 @@ def json_ld(snap: dict, totals: dict) -> str:
         ),
         "url": u,
         "license": "https://opensource.org/licenses/MIT",
-        "isAccessibleForFree": True,
+        # FALSE on purpose. A reduced, 24h-delayed subset is free, but the full
+        # dataset is metered -- and this field is read by dataset aggregators,
+        # which would otherwise index carrydesk as freely accessible. Claiming
+        # "free" because a free tier exists is the kind of machine-readable
+        # overstatement this product cannot afford to make.
+        "isAccessibleForFree": False,
+        "offers": [
+            {
+                "@type": "Offer",
+                "name": "Full live ranking",
+                "url": f"{u}/v1/carry/rankings",
+                "price": C.PRICE_RANKINGS.lstrip("$"),
+                "priceCurrency": "USDC",
+                "description": "Per call, settled on Base via x402. No account required.",
+            },
+            {
+                "@type": "Offer",
+                "name": "Per-coin archived history",
+                "url": f"{u}/v1/carry/history/",
+                "price": C.PRICE_HISTORY.lstrip("$"),
+                "priceCurrency": "USDC",
+            },
+            {
+                "@type": "Offer",
+                "name": "Liquid perp universe",
+                "url": f"{u}/v1/universe",
+                "price": C.PRICE_UNIVERSE.lstrip("$"),
+                "priceCurrency": "USDC",
+            },
+        ],
         "keywords": [
             "funding rate", "perpetual futures", "Hyperliquid", "carry trade",
             "market neutral", "crypto derivatives", "x402",
@@ -179,16 +208,33 @@ def json_ld(snap: dict, totals: dict) -> str:
              "value": snap.get("carry_spread_annualized")},
             {"@type": "PropertyValue", "name": "carry_spread_annualized_median",
              "value": snap.get("carry_spread_annualized_median")},
+            {"@type": "PropertyValue", "name": "headline_vs_typical",
+             "value": snap.get("headline_vs_typical"),
+             "description": "How many times the mean overstates the median coin."},
+            {"@type": "PropertyValue", "name": "outlier_dominated",
+             "value": snap.get("outlier_dominated"),
+             "description": "True when the headline materially overstates a typical coin."},
             {"@type": "PropertyValue", "name": "universe_size",
              "value": snap.get("universe_size")},
-            {"@type": "PropertyValue", "name": "snapshots_published",
-             "value": totals.get("snapshots")},
         ],
+        # Archive size belongs here, not in variableMeasured -- it is a property
+        # of the collection, not a column a consumer can fetch.
+        "includedInDataCatalog": {
+            "@type": "DataCatalog",
+            "name": "carrydesk published archive",
+            "url": f"{u}/archive",
+            "description": (
+                f"{totals.get('snapshots', 0)} snapshots published to date, "
+                "append-only and mirrored to a public git repository."
+            ),
+        },
         "distribution": [
             {"@type": "DataDownload", "encodingFormat": "application/json",
-             "contentUrl": f"{u}/v1/free/carry", "name": "Free tier (delayed)"},
+             "contentUrl": f"{u}/v1/free/carry",
+             "name": "Free tier — reduced and delayed 24h, no wallet required"},
             {"@type": "DataDownload", "encodingFormat": "application/json",
-             "contentUrl": f"{u}/v1/carry/rankings", "name": "Full live ranking (paid)"},
+             "contentUrl": f"{u}/v1/carry/rankings",
+             "name": f"Full live ranking — metered, {C.PRICE_RANKINGS} USDC per call"},
         ],
     }
     return json.dumps(doc, separators=(",", ":"))

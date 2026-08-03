@@ -201,12 +201,20 @@ Stated plainly so nobody builds on sand:
 
 - **Nobody outside has ever bought this.** All payments so far were our own.
 - **Not indexed in CDP's bazaar yet** despite the extension being registered.
-- **No distribution has happened.** Nothing is listed or published anywhere.
-- **The archive is days old at most**, so `/v1/carry/history/*` is thin and the
-  free tier falls back to live data until 24h of snapshots exist.
+  Investigated: the SDK has no register call, so this is Coinbase's to do
+  (`BACKLOG.md`).
+- **No human has promoted it.** It is listed in the official MCP Registry, on
+  PyPI and on Glama, with two awesome-list PRs open — but nobody has posted
+  about it, which is still the binding constraint on whether anyone arrives.
+- **The archive is days old at most**, so `/v1/carry/history/*` is thin. The
+  free tier falls back to live data until a snapshot older than
+  `FREE_TIER_DELAY_HOURS` exists; that transition is covered by
+  `tests/test_delayed_tier.py`.
 - **Uptime is unproven.** The service has not run long enough to have a record.
-- **Strategy backtest numbers are not republished here.** They describe the
-  strategy, not this API's data quality or availability.
+- **The published backtest describes the strategy, not this service.** It says
+  nothing about carrydesk's data quality, latency or availability, and it is
+  not a live track record. Every figure traces to `RESULTS.md` — see
+  `DECISIONS.md` D11 before touching any of them.
 
 ---
 
