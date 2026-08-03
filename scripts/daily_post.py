@@ -73,9 +73,14 @@ def render_markdown(snap: dict) -> str:
         "",
     ]
     if snap.get("outlier_dominated"):
+        mult = snap.get("headline_vs_typical")
+        mult_txt = f"about {mult:.1f}x" if mult else "several times"
+        # NOT "today" -- this fires on nearly every reading, so implying it is
+        # today's exception would misrepresent how the market normally looks.
         lines += [
-            "> **Outlier-dominated today.** One or two illiquid names carry most "
-            "of the headline spread. The median is the number to trust.",
+            f"> **The headline overstates a typical coin by {mult_txt}.** One or two "
+            "illiquid names carry most of it. That is the usual state of this "
+            "market, not today's exception. **The median is the number to trust.**",
             "",
         ]
     lines += ["**Long leg** — the market pays you to hold these:", ""]
@@ -90,11 +95,13 @@ def render_markdown(snap: dict) -> str:
             f"- `{r['coin']}` {pct(r['mean_funding_annualized'])} "
             f"(${r['day_notional_volume'] / 1e6:.1f}m/day)"
         )
+    delay = snap.get("delay_hours") or 0
+    freshness = f"Delayed {delay}h." if delay else "Live reading."
     lines += [
         "",
         "---",
         "",
-        f"Delayed {snap.get('delay_hours', 0)}h. Gross of fees and slippage. "
+        f"{freshness} Gross of fees and slippage. "
         "A structural risk premium, not a prediction — it can go negative.",
         "Not investment advice.",
         "",
@@ -103,22 +110,53 @@ def render_markdown(snap: dict) -> str:
     return "\n".join(lines)
 
 
+X_LIMIT = 280
+
+
 def render_x(snap: dict) -> str:
-    """Short form. Kept under ~280 chars; the detail lives in the linked page."""
+    """Short form, guaranteed to fit `X_LIMIT`.
+
+    The coin lists are the only elastic part, so they shrink first. This is not
+    hypothetical: three real tickers per leg (FARTCOIN, CASHCAT and friends)
+    already pushed a naive three-and-three layout past 280, and a post that
+    silently overruns is one that cannot be published at all.
+
+    Order of sacrifice: coins first (down to one a side), then the coin lines
+    entirely. The spread numbers and the disclaimer never go -- they are the
+    reason the post exists.
+    """
     day = snap["as_of"][:10]
-    longs = ", ".join(r["coin"] for r in snap["longs"][:3])
-    shorts = ", ".join(r["coin"] for r in snap["shorts"][-3:])
     head = pct(snap.get("carry_spread_annualized"))
     med = pct(snap.get("carry_spread_annualized_median"))
-    note = " (outlier-dominated)" if snap.get("outlier_dominated") else ""
-    return (
-        f"Hyperliquid funding carry — {day}\n\n"
-        f"Spread: {head} mean / {med} median{note}\n\n"
-        f"Paid to hold long: {longs}\n"
-        f"Paid to short: {shorts}\n\n"
-        f"{snap['universe_size']} perps ranked on 14d trailing funding. "
-        f"Gross of costs. Not advice."
+    mult = snap.get("headline_vs_typical")
+    note = (
+        f" — headline overstates the typical coin {mult:.1f}x"
+        if (snap.get("outlier_dominated") and mult)
+        else ""
     )
+    longs = [r["coin"] for r in snap.get("longs", [])]
+    shorts = [r["coin"] for r in snap.get("shorts", [])][::-1]  # biggest payer first
+
+    def build(n: int) -> str:
+        coins = ""
+        if n:
+            coins = (
+                f"Paid to hold long: {', '.join(longs[:n])}\n"
+                f"Paid to short: {', '.join(shorts[:n])}\n\n"
+            )
+        return (
+            f"Hyperliquid funding carry — {day}\n\n"
+            f"Spread: {head} mean / {med} median{note}\n\n"
+            f"{coins}"
+            f"{snap.get('universe_size', 0)} perps ranked on 14d trailing funding. "
+            f"Gross of costs. Not advice."
+        )
+
+    for n in (3, 2, 1, 0):
+        text = build(n)
+        if len(text) <= X_LIMIT:
+            return text
+    return build(0)
 
 
 def main() -> int:
