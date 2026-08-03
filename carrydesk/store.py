@@ -157,12 +157,16 @@ class SnapshotStore:
         out.sort(key=lambda r: r["as_of_ts"])
         return out
 
-    def archive_index(self, days: int = 90) -> list[dict]:
+    def archive_index(self, days: int = 90, until_ts: int | None = None) -> list[dict]:
         """One row per archived day: count, span, and the day's closing spread.
 
         Powers the public /archive page. Reads only the last line of interest
         per file rather than parsing everything, because this is rendered on
         request and the archive grows forever.
+
+        `until_ts` must be passed on public pages. Today's row otherwise reports
+        the *live* closing spread, which is the number the free tier's delay is
+        meant to withhold -- the same leak the chart had.
         """
         out = []
         for path in sorted(self.dir.glob("*.jsonl"), reverse=True)[:days]:
@@ -174,6 +178,8 @@ class SnapshotStore:
                 try:
                     snap = json.loads(line)
                 except json.JSONDecodeError:
+                    continue
+                if until_ts is not None and snap.get("as_of_ts", 0) > until_ts:
                     continue
                 n += 1
                 if first is None:
@@ -197,7 +203,9 @@ class SnapshotStore:
             )
         return out
 
-    def spread_series(self, days: int = 90, max_points: int = 400) -> list[dict]:
+    def spread_series(
+        self, days: int = 90, max_points: int = 400, until_ts: int | None = None
+    ) -> list[dict]:
         """Every archived snapshot as (ts, mean, median) for the public chart.
 
         Per-snapshot rather than per-day: the archive is hourly, and daily
@@ -219,9 +227,12 @@ class SnapshotStore:
                 mean = s.get("carry_spread_annualized")
                 if mean is None:
                     continue
+                ts = s.get("as_of_ts")
+                if until_ts is not None and ts and ts > until_ts:
+                    continue
                 rows.append(
                     {
-                        "ts": s.get("as_of_ts"),
+                        "ts": ts,
                         "as_of": s.get("as_of"),
                         "mean": mean,
                         "median": s.get("carry_spread_annualized_median"),

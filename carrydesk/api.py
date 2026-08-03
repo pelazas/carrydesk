@@ -531,7 +531,10 @@ async def root(request: Request):
         fv = free_view(snap)
         return HTMLResponse(
             render(fv, delayed, store.health()["archived_days"],
-                   json_ld(fv, store.totals()), store.spread_series())
+                   json_ld(fv, store.totals()),
+                   # Truncate the chart to the same instant the tiles show, or
+                   # it hands out live data the delay is meant to withhold.
+                   store.spread_series(until_ts=snap.get("as_of_ts")))
         )
     return _index()
 
@@ -575,8 +578,10 @@ async def archive():
 
     from .web import render_archive
 
+    cutoff = (store.delayed() or {}).get("as_of_ts")
     return HTMLResponse(
-        render_archive(store.archive_index(), store.totals(), store.spread_series())
+        render_archive(store.archive_index(until_ts=cutoff), store.totals(),
+                       store.spread_series(until_ts=cutoff))
     )
 
 

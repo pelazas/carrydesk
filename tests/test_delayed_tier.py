@@ -125,3 +125,44 @@ def test_beyond_the_lookback_window_returns_none_not_a_crash(store):
     now = datetime.now(timezone.utc)
     write(store, snap(now - timedelta(days=40), spread=0.15))
     assert store.delayed() is None
+
+
+# --- the delay must hold on every public surface, not just the JSON ---------
+#
+# After the free tier flipped to delayed data, the page still rendered its chart
+# and archive table from the *live* archive. The chart labels its endpoint with
+# that reading's mean and median, so the page published today's live headline
+# beside stat tiles showing yesterday's: three stories on one page, and the
+# numbers the delay exists to withhold given away for free.
+
+
+def test_spread_series_stops_at_the_cutoff(store):
+    now = datetime.now(timezone.utc)
+    for h in (30, 26, 2, 0):
+        write(store, snap(now - timedelta(hours=h), spread=0.1 * h))
+    cutoff = store.delayed()["as_of_ts"]
+    series = store.spread_series(until_ts=cutoff)
+    assert series, "truncation must not empty the series"
+    assert max(r["ts"] for r in series) <= cutoff
+    assert all(r["ts"] <= cutoff for r in series)
+
+
+def test_untruncated_series_would_leak(store):
+    """Guards the regression directly: without a cutoff, live data is present."""
+    now = datetime.now(timezone.utc)
+    write(store, snap(now - timedelta(hours=26), spread=0.11))
+    write(store, snap(now, spread=0.99))
+    cutoff = store.delayed()["as_of_ts"]
+    assert max(r["ts"] for r in store.spread_series()) > cutoff
+    assert max(r["ts"] for r in store.spread_series(until_ts=cutoff)) <= cutoff
+
+
+def test_archive_index_respects_the_cutoff(store):
+    now = datetime.now(timezone.utc)
+    write(store, snap(now - timedelta(hours=26), spread=0.11))
+    write(store, snap(now, spread=0.99))
+    cutoff = store.delayed()["as_of_ts"]
+    for row in store.archive_index(until_ts=cutoff):
+        assert row["carry_spread_annualized"] != pytest.approx(0.99), (
+            "today's live closing spread leaked into the public archive table"
+        )
