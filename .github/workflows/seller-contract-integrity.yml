@@ -1,0 +1,26 @@
+# Unpaid seller-contract integrity check for GET /v1/universe.
+# Manual only. The Action audits the live origin https://carry.pelazas.com,
+# not the pull-request tree. A passing run needs the declaration deployed.
+# Credential-free. No secrets, wallet, payment, SARIF upload, or mutation.
+
+name: seller-contract-integrity
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: epistemedeus/agent-payment-integrity@ef519956505b195454aa670230b0936258b451fb
+        with:
+          origin: https://carry.pelazas.com
+          route: /v1/universe
+          method: GET
+          required-paths: as_of,as_of_ts,n,universe
+          max-routes: "1"
+          upload-sarif: "false"
