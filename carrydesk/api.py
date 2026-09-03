@@ -22,6 +22,13 @@ from fastapi.responses import JSONResponse
 from . import config as C
 from .carry import free_view
 from .hl import HLClient
+from .openapi_contract import (
+    HISTORY_200,
+    RANKINGS_200,
+    UNIVERSE_200,
+    json_200,
+    payment_info,
+)
 from .store import SnapshotStore, refresh_loop
 
 logging.basicConfig(
@@ -411,7 +418,14 @@ async def method():
 
 @app.get("/v1/carry/rankings", tags=["paid"],
          summary=f"Full live carry ranking (PAID, {C.PRICE_RANKINGS} USDC via x402)",
-         responses=paid_responses(C.PRICE_RANKINGS))
+         responses={
+             200: json_200(
+                 RANKINGS_200,
+                 "Full live ranking snapshot plus tier=paid. Same object the handler already returns.",
+             ),
+             **paid_responses(C.PRICE_RANKINGS),
+         },
+         openapi_extra={"x-payment-info": payment_info(C.PRICE_RANKINGS, "/v1/carry/rankings")})
 async def carry_rankings(
     k: int = Query(default=C.K_PER_LEG, ge=1, le=20, description="coins per leg"),
     min_volume: float = Query(default=0, ge=0, description="extra volume filter"),
@@ -452,8 +466,15 @@ async def carry_rankings(
 
 @app.get("/v1/carry/history/{coin}", tags=["paid"],
          summary=f"Archived rank + funding for one coin (PAID, {C.PRICE_HISTORY} USDC via x402)",
-         responses={**paid_responses(C.PRICE_HISTORY),
-                    404: {"description": "No archived snapshot contains this coin yet."}})
+         responses={
+             200: json_200(
+                 HISTORY_200,
+                 "Archived coin history the handler already returns after a paid call.",
+             ),
+             **paid_responses(C.PRICE_HISTORY),
+             404: {"description": "No archived snapshot contains this coin yet."},
+         },
+         openapi_extra={"x-payment-info": payment_info(C.PRICE_HISTORY, "/v1/carry/history/{coin}")})
 async def carry_history(
     coin: str,
     days: int = Query(default=30, ge=1, le=365),
@@ -474,7 +495,14 @@ async def carry_history(
 
 @app.get("/v1/universe", tags=["paid"],
          summary=f"Liquid perp universe by volume (PAID, {C.PRICE_UNIVERSE} USDC via x402)",
-         responses=paid_responses(C.PRICE_UNIVERSE))
+         responses={
+             200: json_200(
+                 UNIVERSE_200,
+                 "Liquid-universe object the handler already constructs.",
+             ),
+             **paid_responses(C.PRICE_UNIVERSE),
+         },
+         openapi_extra={"x-payment-info": payment_info(C.PRICE_UNIVERSE, "/v1/universe")})
 async def universe():
     """Liquid perp universe with volume, open interest and current funding."""
     snap = _require_snapshot()
